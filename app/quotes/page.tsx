@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import ErpLayout from "@/components/ErpLayout";
 import {
   FileText,
+  UserCheck,
   Plus,
   Trash2,
   Printer,
@@ -128,6 +129,16 @@ export default function QuotesPage() {
   const [notes, setNotes] = useState("");
   const [validDays, setValidDays] = useState<number>(15);
   const [autoSaveNewItems, setAutoSaveNewItems] = useState(true);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
+  const [autoSaveCustomer, setAutoSaveCustomer] = useState(true);
+  const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
+  const [newCustName, setNewCustName] = useState("");
+  const [newCustPhone, setNewCustPhone] = useState("");
+  const [newCustCity, setNewCustCity] = useState("طنطا");
+  const [newCustAddress, setNewCustAddress] = useState("");
+  const [newCustCompany, setNewCustCompany] = useState("");
+  const [savingCustomer, setSavingCustomer] = useState(false);
 
   // Save to Catalog Modal State
   const [catalogModalItem, setCatalogModalItem] = useState<{
@@ -156,7 +167,56 @@ export default function QuotesPage() {
     fetchProducts();
     fetchCategories();
     fetchQuotes();
+    fetchCustomers();
   }, []);
+
+  const fetchCustomers = async () => {
+    try {
+      const res = await fetch("/api/customers");
+      const data = await res.json();
+      if (data.customers) setCustomers(data.customers);
+    } catch (err) {
+      console.error("Failed to load customers:", err);
+    }
+  };
+
+  const handleQuickSaveCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCustName.trim() || !newCustPhone.trim()) return;
+    setSavingCustomer(true);
+    try {
+      const res = await fetch("/api/customers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newCustName.trim(),
+          phone: newCustPhone.trim(),
+          city: newCustCity.trim() || "طنطا",
+          address: newCustAddress.trim(),
+          notes: newCustCompany.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (data.customer) {
+        setCustomers((prev) => [data.customer, ...prev.filter((x) => x.id !== data.customer.id)]);
+        setSelectedCustomerId(data.customer.id);
+        setClientName(data.customer.name);
+        setClientPhone(data.customer.phone);
+        if (data.customer.address) setClientAddress(data.customer.address);
+        if (data.customer.notes) setClientCompany(data.customer.notes);
+        setIsAddCustomerOpen(false);
+        setNewCustName("");
+        setNewCustPhone("");
+        setNewCustAddress("");
+        setNewCustCompany("");
+      }
+    } catch (err) {
+      console.error("Save customer error:", err);
+      alert("حدث خطأ أثناء حفظ بيانات العميل");
+    } finally {
+      setSavingCustomer(false);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -478,6 +538,20 @@ export default function QuotesPage() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "فشل حفظ عرض السعر");
+
+      // Auto-save client to CRM
+      if (autoSaveCustomer && clientName.trim() && clientPhone.trim()) {
+        fetch("/api/customers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: clientName.trim(),
+            phone: clientPhone.trim(),
+            address: clientAddress.trim(),
+            notes: clientCompany.trim(),
+          }),
+        }).catch(() => {});
+      }
         quoteResult = data.quote;
         alert(`✅ تم حفظ عرض السعر بنجاح برقم: ${quoteResult.quoteNumber}`);
       }
@@ -910,6 +984,54 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
                   <span>بيانات العميل والموقع</span>
                 </h3>
                 <span className="text-[11px] text-slate-400">الحقول بعلامة (*) مطلوبة للطباعة والواتساب</span>
+              </div>
+
+              {/* Quick Customer Picker Bar from CRM */}
+              <div className="p-3.5 rounded-xl bg-slate-950 border border-cyan-500/30 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-inner">
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-xs font-bold text-cyan-300 flex items-center gap-1.5">
+                      <UserCheck size={14} className="text-cyan-400" />
+                      <span>اختيار العميل من دليل العملاء المسجلين (CRM):</span>
+                    </label>
+                    <span className="text-[10px] text-slate-400">تحميل البيانات تلقائياً</span>
+                  </div>
+                  <select
+                    value={selectedCustomerId}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSelectedCustomerId(val);
+                      if (val === "NEW") {
+                        setIsAddCustomerOpen(true);
+                      } else if (val) {
+                        const c = customers.find((x) => x.id === val);
+                        if (c) {
+                          setClientName(c.name);
+                          setClientPhone(c.phone);
+                          if (c.address) setClientAddress(c.address);
+                          if (c.notes) setClientCompany(c.notes);
+                        }
+                      }
+                    }}
+                    className="w-full px-3 py-2 rounded-lg bg-slate-900 border border-slate-700 text-xs text-white focus:border-cyan-500 focus:outline-none"
+                  >
+                    <option value="">-- اختر عميلاً مسجلاً مسبقاً في النظام --</option>
+                    <option value="NEW">➕ تسجيل وإضافة عميل جديد في CRM الآن...</option>
+                    {customers.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        👤 {c.name} ({c.phone}) {c.city ? `• ${c.city}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAddCustomerOpen(true)}
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-md shadow-cyan-500/20 shrink-0 self-end sm:self-auto transition"
+                >
+                  <Plus size={15} />
+                  <span>إضافة عميل جديد 👤</span>
+                </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -2169,6 +2291,100 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
                 تم التطوير بواسطة شركة أوركا لتقنية المعلومات — 01018671000
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Quick Add Client Modal */}
+      {isAddCustomerOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-slate-900 border border-cyan-500/40 rounded-2xl p-6 shadow-2xl relative text-xs">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+              <h3 className="text-sm font-bold text-cyan-400 flex items-center gap-2">
+                <UserCheck size={18} />
+                <span>إضافة وتسجيل عميل جديد في CRM</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsAddCustomerOpen(false)}
+                className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleQuickSaveCustomer} className="space-y-3">
+              <div>
+                <label className="block text-slate-300 font-bold mb-1">اسم العميل أو المنشأة *</label>
+                <input
+                  type="text"
+                  required
+                  value={newCustName}
+                  onChange={(e) => setNewCustName(e.target.value)}
+                  placeholder="مثال: أستاذ أحمد الشناوي"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-cyan-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">رقم الهاتف / الواتساب *</label>
+                  <input
+                    type="tel"
+                    required
+                    value={newCustPhone}
+                    onChange={(e) => setNewCustPhone(e.target.value)}
+                    placeholder="010xxxxxxxx"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-mono focus:border-cyan-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-bold mb-1">المدينة / المحافظة</label>
+                  <input
+                    type="text"
+                    value={newCustCity}
+                    onChange={(e) => setNewCustCity(e.target.value)}
+                    placeholder="طنطا"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-cyan-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-slate-300 font-bold mb-1">عنوان المنشأة أو موقع التركيب</label>
+                <input
+                  type="text"
+                  value={newCustAddress}
+                  onChange={(e) => setNewCustAddress(e.target.value)}
+                  placeholder="شارع الجيش / المحطة"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-cyan-500"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-300 font-bold mb-1">اسم الشركة أو ملاحظات</label>
+                <input
+                  type="text"
+                  value={newCustCompany}
+                  onChange={(e) => setNewCustCompany(e.target.value)}
+                  placeholder="مثال: شركة الدلتا للتجارة"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-cyan-500"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-3 border-t border-slate-800">
+                <button
+                  type="submit"
+                  disabled={savingCustomer}
+                  className="flex-1 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-black text-xs transition"
+                >
+                  {savingCustomer ? "جاري الحفظ..." : "حفظ واختيار العميل في عرض السعر فوراً 👤"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAddCustomerOpen(false)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

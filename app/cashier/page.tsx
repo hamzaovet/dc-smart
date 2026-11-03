@@ -6,6 +6,7 @@ import { printThermalReceipt } from "@/components/ThermalReceipt";
 import { playSound } from "@/lib/sounds";
 import { useStaff } from "@/context/StaffContext";
 import {
+  UserCheck,
   Search,
   ShoppingCart,
   Trash2,
@@ -24,6 +25,7 @@ import {
   Layers,
   MapPin,
   Flame,
+  X,
 } from "lucide-react";
 
 interface Product {
@@ -55,6 +57,15 @@ export default function CashierPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("الكل");
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>("");
+  const [autoSaveCustomer, setAutoSaveCustomer] = useState(true);
+  const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
+  const [newCustName, setNewCustName] = useState("");
+  const [newCustPhone, setNewCustPhone] = useState("");
+  const [newCustCity, setNewCustCity] = useState("طنطا");
+  const [newCustAddress, setNewCustAddress] = useState("");
+  const [savingCustomer, setSavingCustomer] = useState(false);
 
   // Ticket State
   const [ticketItems, setTicketItems] = useState<TicketItem[]>([]);
@@ -71,7 +82,55 @@ export default function CashierPage() {
 
   useEffect(() => {
     fetchProducts();
+    fetchCustomers();
   }, []);
+
+  const fetchCustomers = async () => {
+    try {
+      const res = await fetch("/api/customers");
+      const data = await res.json();
+      if (data.customers) setCustomers(data.customers);
+    } catch (err) {
+      console.error("Failed to fetch customers:", err);
+    }
+  };
+
+  const handleQuickSaveCustomer = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCustName.trim() || !newCustPhone.trim()) return;
+    setSavingCustomer(true);
+    try {
+      const res = await fetch("/api/customers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newCustName.trim(),
+          phone: newCustPhone.trim(),
+          city: newCustCity.trim() || "طنطا",
+          address: newCustAddress.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (data.customer) {
+        setCustomers((prev) => [data.customer, ...prev.filter((x) => x.id !== data.customer.id)]);
+        setSelectedCustomerId(data.customer.id);
+        setCustomerName(data.customer.name);
+        setCustomerPhone(data.customer.phone);
+        if (data.customer.city) setCustomerCity(data.customer.city);
+        if (data.customer.address) setCustomerAddress(data.customer.address);
+        setIsAddCustomerOpen(false);
+        setNewCustName("");
+        setNewCustPhone("");
+        setNewCustAddress("");
+        playSound("pop");
+      }
+    } catch (err) {
+      console.error("Save customer error:", err);
+      alert("حدث خطأ أثناء حفظ بيانات العميل");
+    } finally {
+      setSavingCustomer(false);
+    }
+  };
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -365,7 +424,7 @@ export default function CashierPage() {
                       </span>
                       <button
                         type="button"
-                        className="w-7 h-7 rounded-lg bg-pink-500/20 text-cyan-400 group-hover:bg-pink-500 group-hover:text-black flex items-center justify-center transition-colors"
+                        className="w-7 h-7 rounded-lg bg-cyan-500/20 text-cyan-400 group-hover:bg-pink-500 group-hover:text-black flex items-center justify-center transition-colors"
                       >
                         <Plus size={15} />
                       </button>
@@ -378,7 +437,7 @@ export default function CashierPage() {
         </div>
 
         {/* RIGHT: Current Ticket / Bill Pane */}
-        <div className="w-full lg:w-[380px] bg-[#0c0914] border border-pink-500/25 rounded-2xl flex flex-col justify-between p-4 shadow-2xl">
+        <div className="w-full lg:w-[380px] bg-[#0c0914] border border-cyan-500/25 rounded-2xl flex flex-col justify-between p-4 shadow-2xl">
           {/* Ticket Header */}
           <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
             <div className="flex items-center gap-2">
@@ -386,7 +445,7 @@ export default function CashierPage() {
               <span className="font-bold font-serif text-sm text-zinc-100">
                 فاتورة البيع الحالية
               </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/20 text-cyan-400 font-mono font-bold">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 font-mono font-bold">
                 {ticketItems.length}
               </span>
             </div>
@@ -402,48 +461,118 @@ export default function CashierPage() {
             )}
           </div>
 
-          {/* Customer Inputs (if delivery) */}
+          {/* Customer Selector & CRM Registration */}
           <div className="py-2.5 space-y-2 border-b border-zinc-800/80 text-xs">
+            {/* Quick Customer Picker Dropdown + Add Button */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] font-bold text-cyan-400 flex items-center gap-1">
+                  <UserCheck size={13} />
+                  <span>العميل (دليل CRM):</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsAddCustomerOpen(true)}
+                  className="text-[10px] text-cyan-300 hover:text-white flex items-center gap-0.5 font-bold"
+                >
+                  <Plus size={11} />
+                  <span>+ عميل جديد</span>
+                </button>
+              </div>
+              <select
+                value={selectedCustomerId}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSelectedCustomerId(val);
+                  if (val === "NEW") {
+                    setIsAddCustomerOpen(true);
+                  } else if (val === "") {
+                    setCustomerName("عميل صالة العرض والمبيعات");
+                    setCustomerPhone("01000000000");
+                    setCustomerCity("طنطا");
+                    setCustomerAddress("");
+                  } else {
+                    const c = customers.find((x) => x.id === val);
+                    if (c) {
+                      setCustomerName(c.name);
+                      setCustomerPhone(c.phone);
+                      if (c.city) setCustomerCity(c.city);
+                      if (c.address) setCustomerAddress(c.address);
+                    }
+                  }
+                }}
+                className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-xs text-zinc-100 focus:outline-none focus:border-cyan-500"
+              >
+                <option value="">-- عميل نقدي (صالة المعرض) --</option>
+                <option value="NEW">➕ تسجيل عميل جديد في CRM...</option>
+                {customers.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    👤 {c.name} ({c.phone}) {c.city ? `• ${c.city}` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Editable Name & Phone */}
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="text-[10px] text-zinc-400 block mb-0.5">العميل:</label>
+                <label className="text-[10px] text-zinc-400 block mb-0.5">اسم العميل:</label>
                 <input
                   type="text"
                   value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-200"
+                  onChange={(e) => {
+                    setCustomerName(e.target.value);
+                    if (selectedCustomerId) setSelectedCustomerId("");
+                  }}
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 focus:border-cyan-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="text-[10px] text-zinc-400 block mb-0.5">الهاتف:</label>
+                <label className="text-[10px] text-zinc-400 block mb-0.5">رقم الهاتف:</label>
                 <input
                   type="tel"
                   value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 font-mono"
+                  onChange={(e) => {
+                    setCustomerPhone(e.target.value);
+                    if (selectedCustomerId) setSelectedCustomerId("");
+                  }}
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 font-mono focus:border-cyan-500 focus:outline-none"
                 />
               </div>
             </div>
 
+            {/* Auto-Save to CRM checkbox if custom customer */}
+            {!selectedCustomerId && customerName !== "عميل صالة العرض والمبيعات" && customerPhone !== "01000000000" && customerPhone.length >= 8 && (
+              <label className="flex items-center gap-1.5 cursor-pointer text-[10px] text-cyan-300 pt-0.5">
+                <input
+                  type="checkbox"
+                  checked={autoSaveCustomer}
+                  onChange={(e) => setAutoSaveCustomer(e.target.checked)}
+                  className="accent-cyan-500 rounded"
+                />
+                <span>حفظ وتحديث هذا العميل في قاعدة بيانات العملاء (CRM) 💾</span>
+              </label>
+            )}
+
             {orderType === "delivery" && (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2 pt-1">
                 <div>
-                  <label className="text-[10px] text-zinc-400 block mb-0.5">المحافظة:</label>
+                  <label className="text-[10px] text-zinc-400 block mb-0.5">المدينة / المحافظة:</label>
                   <input
                     type="text"
                     value={customerCity}
                     onChange={(e) => setCustomerCity(e.target.value)}
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-200"
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 focus:border-cyan-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] text-zinc-400 block mb-0.5">العنوان بالتفصيل:</label>
+                  <label className="text-[10px] text-zinc-400 block mb-0.5">عنوان موقع التركيب:</label>
                   <input
                     type="text"
                     value={customerAddress}
                     onChange={(e) => setCustomerAddress(e.target.value)}
-                    placeholder="الشارع ورقم العمارة"
-                    className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-200"
+                    placeholder="الشارع أو المنطقة"
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 focus:border-cyan-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -561,6 +690,90 @@ export default function CashierPage() {
           </div>
         </div>
       </div>
+      {/* Quick Add Customer Modal */}
+      {isAddCustomerOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-[#0f172a] border border-cyan-500/30 rounded-2xl p-6 shadow-2xl relative text-xs">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+              <h3 className="text-sm font-bold text-cyan-400 flex items-center gap-2">
+                <UserCheck size={18} />
+                <span>إضافة وتسجيل عميل جديد في CRM</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsAddCustomerOpen(false)}
+                className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleQuickSaveCustomer} className="space-y-3">
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">اسم العميل أو المنشأة *</label>
+                <input
+                  type="text"
+                  required
+                  value={newCustName}
+                  onChange={(e) => setNewCustName(e.target.value)}
+                  placeholder="مثال: أستاذ محمود راشد / شركة الأندلس"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-medium mb-1">رقم الهاتف / الواتساب *</label>
+                  <input
+                    type="tel"
+                    required
+                    value={newCustPhone}
+                    onChange={(e) => setNewCustPhone(e.target.value)}
+                    placeholder="010xxxxxxxx"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-medium mb-1">المدينة / المحافظة</label>
+                  <input
+                    type="text"
+                    value={newCustCity}
+                    onChange={(e) => setNewCustCity(e.target.value)}
+                    placeholder="طنطا"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">العنوان أو موقع التركيب</label>
+                <input
+                  type="text"
+                  value={newCustAddress}
+                  onChange={(e) => setNewCustAddress(e.target.value)}
+                  placeholder="شارع الجيش، طنطا"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-white"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-3 border-t border-slate-800">
+                <button
+                  type="submit"
+                  disabled={savingCustomer}
+                  className="flex-1 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs"
+                >
+                  {savingCustomer ? "جاري الحفظ..." : "حفظ واختيار العميل فوراً 👤"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAddCustomerOpen(false)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white"
+                >
+                  إلغاء
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </ErpLayout>
   );
 }

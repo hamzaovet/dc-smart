@@ -37,6 +37,7 @@ export default function InventoryPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("الكل");
+  const [suppliersList, setSuppliersList] = useState<any[]>([]);
 
   // Add Item Modal
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -55,7 +56,18 @@ export default function InventoryPage() {
 
   useEffect(() => {
     fetchItems();
+    fetchSuppliers();
   }, []);
+
+  const fetchSuppliers = async () => {
+    try {
+      const res = await fetch("/api/suppliers");
+      const data = await res.json();
+      if (data.suppliers) setSuppliersList(data.suppliers);
+    } catch (err) {
+      console.error("Failed to fetch suppliers:", err);
+    }
+  };
 
   const fetchItems = async () => {
     setLoading(true);
@@ -247,36 +259,45 @@ export default function InventoryPage() {
           </div>
         </div>
 
-        {/* Search & Category Pills */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="relative w-full sm:w-80">
-            <Search size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="البحث باسم الصنف أو المورد..."
-              className="w-full pr-10 pl-4 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-cyan-500"
-            />
+        {/* Search & Responsive Category Filter Bar */}
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="relative flex-1 max-w-md">
+              <Search size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="البحث باسم الصنف، الموديل، أو المورد..."
+                className="w-full pr-10 pl-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-cyan-500 shadow-inner"
+              />
+            </div>
+            <div className="text-xs text-zinc-400 font-medium self-end sm:self-center">
+              عرض <strong className="text-cyan-400 font-mono">{filteredItems.length}</strong> من أصل <strong className="text-zinc-200 font-mono">{items.length}</strong> صنف
+            </div>
           </div>
 
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-            {categoriesList.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => {
-                  playSound("click");
-                  setSelectedCategory(cat);
-                }}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
-                  selectedCategory === cat
-                    ? "bg-pink-500 text-black shadow-md"
-                    : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+          {/* Full-width scrollable category pills - Never Cut Off */}
+          <div className="w-full overflow-x-auto pb-2 pt-1 scrollbar-thin">
+            <div className="flex items-center gap-2 min-w-max">
+              {categoriesList.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => {
+                    playSound("click");
+                    setSelectedCategory(cat);
+                  }}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition shrink-0 ${
+                    selectedCategory === cat
+                      ? "bg-cyan-500 text-slate-950 font-black shadow-lg shadow-cyan-500/25"
+                      : "bg-zinc-900/90 text-zinc-400 hover:text-white hover:bg-zinc-800 border border-zinc-800"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -499,14 +520,25 @@ export default function InventoryPage() {
               </div>
 
               <div>
-                <label className="block text-zinc-300 font-medium mb-1">المورد أو جهة التوريد:</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-zinc-300 font-medium">المورد أو جهة التوريد:</label>
+                  <span className="text-[10px] text-cyan-400 font-bold">اختر من المسجلين أو اكتب اسماً جديداً</span>
+                </div>
                 <input
                   type="text"
+                  list="registered-suppliers-list"
                   value={supplier}
                   onChange={(e) => setSupplier(e.target.value)}
                   placeholder="مثال: الشركة الهندسية لتوزيع أنظمة داهوا / هيكفيجن"
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-cyan-500"
                 />
+                <datalist id="registered-suppliers-list">
+                  {suppliersList.map((s) => (
+                    <option key={s.id} value={s.name}>
+                      {s.name} ({s.company ? `${s.company} • ` : ""}{s.category})
+                    </option>
+                  ))}
+                </datalist>
               </div>
 
               <div className="flex gap-3 pt-3 border-t border-zinc-800">

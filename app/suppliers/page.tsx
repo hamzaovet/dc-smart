@@ -185,6 +185,8 @@ export default function SuppliersPage() {
       if (res.ok && data.success) {
         playSound("success");
         setSuppliers((prev) => [data.supplier, ...prev]);
+        setInvSupplierId(data.supplier.id);
+        setPaySupplierId(data.supplier.id);
         setIsAddSupplierOpen(false);
         setSupName("");
         setSupPhone("");
@@ -869,17 +871,34 @@ export default function SuppliersPage() {
 
             <form onSubmit={handleCreateInvoice} className="space-y-3">
               <div>
-                <label className="block text-zinc-300 font-medium mb-1">المورد:</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-zinc-300 font-medium">المورد أو شريك التوريد *</label>
+                  <button
+                    type="button"
+                    onClick={() => setIsAddSupplierOpen(true)}
+                    className="text-[11px] text-cyan-400 hover:underline flex items-center gap-1 font-bold"
+                  >
+                    <Plus size={12} />
+                    <span>+ إضافة مورد جديد</span>
+                  </button>
+                </div>
                 <select
                   required
                   value={invSupplierId}
-                  onChange={(e) => setInvSupplierId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
+                  onChange={(e) => {
+                    if (e.target.value === "NEW") {
+                      setIsAddSupplierOpen(true);
+                    } else {
+                      setInvSupplierId(e.target.value);
+                    }
+                  }}
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-cyan-500"
                 >
-                  <option value="">-- اختر المورد --</option>
+                  <option value="">-- اختر المورد المسجل --</option>
+                  <option value="NEW">➕ إضافة وتسجيل مورد جديد الآن...</option>
                   {suppliers.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name} ({s.category})
+                      {s.name} ({s.company ? `${s.company} • ` : ""}{s.category})
                     </option>
                   ))}
                 </select>
@@ -1060,14 +1079,31 @@ export default function SuppliersPage() {
 
             <form onSubmit={handleCreatePayment} className="space-y-3">
               <div>
-                <label className="block text-zinc-300 font-medium mb-1">المورد المستفيد:</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-zinc-300 font-medium">المورد المستفيد:</label>
+                  <button
+                    type="button"
+                    onClick={() => setIsAddSupplierOpen(true)}
+                    className="text-[11px] text-emerald-400 hover:underline flex items-center gap-1 font-bold"
+                  >
+                    <Plus size={12} />
+                    <span>+ إضافة مورد جديد</span>
+                  </button>
+                </div>
                 <select
                   required
                   value={paySupplierId}
-                  onChange={(e) => setPaySupplierId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
+                  onChange={(e) => {
+                    if (e.target.value === "NEW") {
+                      setIsAddSupplierOpen(true);
+                    } else {
+                      setPaySupplierId(e.target.value);
+                    }
+                  }}
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-emerald-500"
                 >
-                  <option value="">-- اختر المورد --</option>
+                  <option value="">-- اختر المورد المستحق --</option>
+                  <option value="NEW">➕ إضافة وتسجيل مورد جديد الآن...</option>
                   {suppliers.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name} (المستحق: {s.currentBalance} ج.م)
