@@ -582,7 +582,7 @@ export default function MenuAdminPage() {
                 <table className="w-full text-right text-xs">
                   <thead className="bg-zinc-950/80 text-zinc-400 uppercase tracking-wider border-b border-zinc-800">
                     <tr>
-                      <th className="py-3 px-4 font-serif">الصنف / الجهاز</th>
+                      <th className="py-3 px-4 font-serif">الصنف / الجهاز والوصف</th>
                       <th className="py-3 px-4 font-serif">القسم</th>
                       <th className="py-3 px-4 font-serif">البراند والنوع</th>
                       <th className="py-3 px-4 font-serif">المواصفة والبيئة</th>
@@ -611,17 +611,22 @@ export default function MenuAdminPage() {
                                 <div className="font-bold text-zinc-100 flex items-center gap-1.5">
                                   <span>{product.nameAr}</span>
                                   {product.isWinter && (
-                                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                                      ❄️ شتوي
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold">
+                                      🛡️ الأكثر طلباً
                                     </span>
                                   )}
                                   {product.isFeatured && (
-                                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
                                       ⭐ مميز
                                     </span>
                                   )}
                                 </div>
-                                <span className="text-[11px] text-zinc-500 font-sans">{product.nameEn}</span>
+                                <span className="text-[11px] text-zinc-500 font-sans block">{product.nameEn}</span>
+                                {product.descriptionAr && (
+                                  <p className="text-[10.5px] text-zinc-400 line-clamp-1 max-w-sm mt-0.5" title={product.descriptionAr}>
+                                    {product.descriptionAr}
+                                  </p>
+                                )}
                               </div>
                             </div>
                           </td>
@@ -675,7 +680,7 @@ export default function MenuAdminPage() {
 
                           {/* Stock Quantity */}
                           <td className="py-3 px-4 font-mono font-bold text-zinc-300">
-                            {product.stockQuantity} زجاجة
+                            {product.stockQuantity} قطعة
                           </td>
 
                           {/* In-Stock Toggle */}
@@ -779,24 +784,27 @@ export default function MenuAdminPage() {
         )}
       </div>
 
-      {/* Add / Edit Perfume Modal with ImgBB Uploader */}
+      {/* Add / Edit Product Modal with ImgBB Uploader */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-2xl bg-[#120e1c] border border-cyan-500/30 rounded-2xl p-6 shadow-2xl relative my-8">
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-800 mb-4">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md p-3 sm:p-6 overflow-y-auto flex justify-center items-start">
+          <div className="w-full max-w-2xl bg-[#0f0b1a] border border-cyan-500/40 rounded-2xl shadow-2xl relative flex flex-col max-h-[92vh] overflow-hidden my-auto">
+            {/* STICKY HEADER - NEVER CUT OFF */}
+            <div className="sticky top-0 z-30 bg-[#120e1c] px-6 py-4 border-b border-zinc-800 flex items-center justify-between shrink-0 shadow-md">
               <h3 className="text-base font-bold text-cyan-300 font-serif flex items-center gap-2">
-                <Layers size={18} />
-                <span>{editingProduct ? "تعديل بيانات الصنف" : "إضافة كاميرا / جهاز جديد للكتالوج"}</span>
+                <Layers size={18} className="text-cyan-400" />
+                <span>{editingProduct ? "تعديل بيانات الصنف والمنظومة" : "إضافة كاميرا / جهاز جديد للكتالوج"}</span>
               </h3>
               <button
+                type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-lg text-zinc-400 hover:text-white"
+                className="p-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveProduct} className="space-y-4 text-xs">
+            <form onSubmit={handleSaveProduct} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-6 overflow-y-auto space-y-4 text-xs">
               {/* Product Names */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -820,6 +828,24 @@ export default function MenuAdminPage() {
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                   />
                 </div>
+              </div>
+
+              {/* Product Description - Crucial for cards, quotes, and bills */}
+              <div>
+                <label className="block text-zinc-300 font-bold mb-1">
+                  وصف الصنف والمواصفات الفنية التفصيلية (Description & Technical Specs) *
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  value={formDescAr}
+                  onChange={(e) => setFormDescAr(e.target.value)}
+                  placeholder="مثال: كاميرا داهوا خارجي 2 ميجا Full Color بدقة 1080p، رؤية ليلية ملونة 24 ساعة، مايك داخلي مدمج، عدسة 2.8 مم، هيكل معدني مقاوم للعوامل الجوية IP67، ضمان سنتين معتمد."
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-cyan-500 leading-relaxed"
+                />
+                <p className="text-[10px] text-zinc-500 mt-1">
+                  هذا الوصف يظهر تلقائياً في كارت الصنف بالكتالوج، وعروض الأسعار، وفواتير البيع والشراء.
+                </p>
               </div>
 
               {/* Category & Brand */}
@@ -873,7 +899,7 @@ export default function MenuAdminPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-zinc-300 font-medium mb-1">الكمية بالمخزن</label>
+                  <label className="block text-zinc-300 font-medium mb-1">الكمية بالمخزن (قطعة)</label>
                   <input
                     type="number"
                     value={formStockQty}
@@ -967,21 +993,23 @@ export default function MenuAdminPage() {
                 />
               </div>
 
-              {/* Submit Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-800">
+              </div>
+
+              {/* STICKY FOOTER */}
+              <div className="sticky bottom-0 z-30 bg-[#120e1c] px-6 py-3 border-t border-zinc-800 flex items-center justify-end gap-3 shrink-0 shadow-lg">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition"
+                  className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition font-bold"
                 >
                   إلغاء
                 </button>
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-6 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 text-black font-bold transition disabled:opacity-50"
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 text-black font-bold transition disabled:opacity-50 shadow-md"
                 >
-                  {saving ? "جاري الحفظ..." : editingProduct ? "تعديل بيانات الصنف" : "إضافة الصنف للكتالوج"}
+                  {saving ? "جاري الحفظ..." : editingProduct ? "حفظ التعديلات" : "إضافة الصنف للكتالوج"}
                 </button>
               </div>
             </form>
@@ -991,22 +1019,24 @@ export default function MenuAdminPage() {
 
       {/* Add / Edit Category Modal */}
       {isCatModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-lg bg-[#120e1c] border border-cyan-500/30 rounded-2xl p-6 shadow-2xl relative my-8">
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-800 mb-4">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md p-3 sm:p-6 overflow-y-auto flex justify-center items-start">
+          <div className="w-full max-w-lg bg-[#0f0b1a] border border-cyan-500/40 rounded-2xl shadow-2xl relative flex flex-col max-h-[92vh] overflow-hidden my-auto">
+            <div className="sticky top-0 z-30 bg-[#120e1c] px-6 py-4 border-b border-zinc-800 flex items-center justify-between shrink-0 shadow-md">
               <h3 className="text-base font-bold text-cyan-300 font-serif flex items-center gap-2">
-                <FolderTree size={18} />
+                <FolderTree size={18} className="text-cyan-400" />
                 <span>{editingCategory ? "تعديل بيانات القسم" : "إضافة قسم جديد لكتالوج دي سي سمارت"}</span>
               </h3>
               <button
+                type="button"
                 onClick={() => setIsCatModalOpen(false)}
-                className="p-1 rounded-lg text-zinc-400 hover:text-white"
+                className="p-1.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveCategory} className="space-y-4 text-xs">
+            <form onSubmit={handleSaveCategory} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-6 overflow-y-auto space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-zinc-300 font-medium mb-1">اسم القسم بالعربي *</label>
@@ -1025,7 +1055,7 @@ export default function MenuAdminPage() {
                     type="text"
                     value={catNameEn}
                     onChange={(e) => setCatNameEn(e.target.value)}
-                    placeholder="e.g. Royal Winter Fragrances"
+                    placeholder="e.g. Dahua IP & HD Surveillance"
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                   />
                 </div>
@@ -1038,7 +1068,7 @@ export default function MenuAdminPage() {
                     type="text"
                     value={catIcon}
                     onChange={(e) => setCatIcon(e.target.value)}
-                    placeholder="❄️ أو 👑 أو ✨"
+                    placeholder="🛡️ أو 📹 أو 💾 أو ⚡"
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 text-center text-lg"
                   />
                 </div>
@@ -1086,19 +1116,21 @@ export default function MenuAdminPage() {
                 />
               </div>
 
-              {/* Actions */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-zinc-800">
+              </div>
+
+              {/* Actions Sticky Footer */}
+              <div className="sticky bottom-0 z-30 bg-[#120e1c] px-6 py-3 border-t border-zinc-800 flex items-center justify-end gap-3 shrink-0 shadow-lg">
                 <button
                   type="button"
                   onClick={() => setIsCatModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition"
+                  className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-300 transition font-bold"
                 >
                   إلغاء
                 </button>
                 <button
                   type="submit"
                   disabled={savingCat}
-                  className="px-6 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 text-black font-bold transition disabled:opacity-50"
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 text-black font-bold transition disabled:opacity-50 shadow-md"
                 >
                   {savingCat ? "جاري الحفظ..." : editingCategory ? "تعديل القسم" : "إنشاء القسم"}
                 </button>

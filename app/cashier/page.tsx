@@ -34,6 +34,7 @@ interface Product {
   nameEn: string;
   brandAr: string;
   brandEn: string;
+  descriptionAr?: string;
   price: number;
   originalPrice?: number | null;
   volume: string;
@@ -249,6 +250,7 @@ export default function CashierPage() {
       items: ticketItems.map((item) => ({
         nameAr: item.product.nameAr,
         nameEn: item.product.nameEn,
+        description: item.product.descriptionAr || item.product.brandAr || "أصلي معتمد",
         quantity: item.quantity,
         price: item.unitPrice,
         volume: item.product.volume,

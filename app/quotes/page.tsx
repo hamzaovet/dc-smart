@@ -82,6 +82,7 @@ interface DbProduct {
   nameEn: string;
   brandAr: string;
   price: number;
+  descriptionAr?: string;
   category?: {
     id: string;
     nameAr: string;
@@ -270,7 +271,7 @@ export default function QuotesPage() {
       const newItem: QuoteItem = {
         id: p.id,
         name: p.nameAr,
-        specs: p.brandAr || "أصلي معتمد",
+        specs: p.descriptionAr || p.brandAr || "معدات ومنظومات أمنية معتمدة",
         category: p.category?.nameAr || "كاميرات ومعدات",
         quantity: 1,
         unitPrice: p.price,
@@ -1250,8 +1251,8 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
                     <thead>
                       <tr className="border-b border-slate-800 text-slate-400 font-bold bg-slate-950/60">
                         <th className="p-3 w-10">#</th>
-                        <th className="p-3">اسم الصنف والموديل</th>
-                        <th className="p-3">المواصفات / الملاحظات</th>
+                        <th className="p-3">اسم الصنف أو الكود</th>
+                        <th className="p-3">وصف المنتج والمواصفات الفنية</th>
                         <th className="p-3 w-24 text-center">الكمية</th>
                         <th className="p-3 w-32 text-center">سعر الوحدة (ج.م)</th>
                         <th className="p-3 w-32 text-center">الإجمالي (ج.م)</th>
@@ -2078,8 +2079,8 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
                       } print:bg-gray-200 print:text-black print:border-black`}
                     >
                       <th className="p-3 w-10 text-center">#</th>
-                      <th className="p-3">الصنف والموديل</th>
-                      <th className="p-3">المواصفات الفنية والملاحظات</th>
+                      <th className="p-3">اسم الصنف وكود الموديل</th>
+                      <th className="p-3">وصف المنتج والمواصفات الفنية</th>
                       <th className="p-3 w-16 text-center">الكمية</th>
                       <th className="p-3 w-28 text-center">سعر الوحدة</th>
                       <th className="p-3 w-32 text-center">الإجمالي</th>

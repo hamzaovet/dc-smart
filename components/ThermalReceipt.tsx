@@ -39,6 +39,7 @@ export function printThermalReceipt(order: PrintableOrder, hotline?: string) {
   const parsedItems: Array<{
     nameAr?: string;
     nameEn?: string;
+    description?: string;
     quantity?: number;
     qty?: number;
     price?: number;
@@ -97,7 +98,8 @@ export function printThermalReceipt(order: PrintableOrder, hotline?: string) {
       <tr style="border-bottom: 1px dashed #bbb;">
         <td style="padding: 6px 0; text-align: right; vertical-align: top;">
           <strong style="font-size: 13px;">${item.nameAr || item.nameEn || "معدة أمنية"}</strong>
-          <div style="font-size: 11px; color: #555;">${item.brandAr || "أصلي معتمد"} ${
+          ${item.description ? `<div style="font-size: 10px; color: #444; margin-top: 2px;">${item.description}</div>` : ""}
+          <div style="font-size: 10.5px; color: #666;">${item.brandAr || "أصلي معتمد"} ${
         item.type ? `• ${item.type}` : ""
       }</div>
         </td>

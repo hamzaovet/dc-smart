@@ -105,6 +105,7 @@ export default function SuppliersPage() {
   // Invoice Form
   const [invSupplierId, setInvSupplierId] = useState("");
   const [invItemName, setInvItemName] = useState("");
+  const [invItemDesc, setInvItemDesc] = useState("");
   const [invItemCategory, setInvItemCategory] = useState("كاميرات مراقبة وأجهزة تسجيل");
   const [invQty, setInvQty] = useState("10");
   const [invUnit, setInvUnit] = useState("قطعة");
@@ -600,8 +601,15 @@ export default function SuppliersPage() {
                           </td>
                           <td className="py-3 px-4">
                             {parsed.map((item, idx) => (
-                              <div key={idx} className="text-zinc-300">
-                                {item.name} × <span className="font-bold text-cyan-300">{item.quantity} {item.unit || "قطعة"}</span>
+                              <div key={idx} className="text-zinc-300 mb-1">
+                                <div>
+                                  <span className="font-bold">{item.name}</span> × <span className="font-bold text-cyan-300 font-mono">{item.quantity} {item.unit || "قطعة"}</span>
+                                </div>
+                                {item.description && (
+                                  <div className="text-[10.5px] text-zinc-400">
+                                    {item.description}
+                                  </div>
+                                )}
                               </div>
                             ))}
                           </td>
@@ -930,6 +938,17 @@ export default function SuppliersPage() {
                     <option value="شاشات وأجهزة شبكات">شاشات عرض وأجهزة شبكات وسويتشات</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-zinc-300 font-medium mb-1">وصف الصنف والمواصفات الفنية التفصيلية:</label>
+                <input
+                  type="text"
+                  value={invItemDesc}
+                  onChange={(e) => setInvItemDesc(e.target.value)}
+                  placeholder="مثال: دقة 2 ميجا Full Color ألوان ليلية، مايك داخلي، ضمان سنتين الوكيل"
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
+                />
               </div>
 
               <div className="grid grid-cols-3 gap-3">
