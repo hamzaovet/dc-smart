@@ -98,7 +98,7 @@ export default function ProductDetailsClient({
   };
 
   const whatsappText = encodeURIComponent(
-    `مساء الخير ميني بيك، أود الاستفسار والطلب لمنتج:\n` +
+    `مساء الخير دي سي سمارت، أود الاستفسار والطلب للمنظومة / الصنف:\n` +
       `*${product.nameAr} (${product.nameEn})*\n` +
       `التصنيف / البراند: ${product.brandAr}\n` +
       `نوع الإصدار: ${badgeInfo.textAr}\n` +
@@ -315,7 +315,7 @@ export default function ProductDetailsClient({
             </div>
           </div>
 
-          {/* The Mini Pick Golden Guarantee Banner */}
+          {/* The DC Smart Golden Guarantee Banner */}
           <div className="p-4 rounded-2xl glass-luxury border border-pink-500/25 space-y-2">
             <h4 className="font-serif font-bold text-xs text-pink-400 flex items-center gap-1.5 uppercase tracking-wider">
               <ShieldCheck size={16} />
@@ -341,7 +341,7 @@ export default function ProductDetailsClient({
           </h2>
           <p className="text-xs text-zinc-400 mt-1">
             {isAr
-              ? "مواصفات دقيقة لكل قطعة وتفاصيل ما ستجده فور فتح علبة ميني بيك الأنيقة"
+              ? "مواصفات دقيقة لكل كاميرا وجهاز وتفاصيل ما ستجده فور استلام المنظومة المعتمدة من دي سي سمارت"
               : "Precise specifications of each piece and complete unboxing details"}
           </p>
         </div>
@@ -419,7 +419,7 @@ export default function ProductDetailsClient({
               {isAr ? "منتجات مقترحة تناسب ذوقك الكيوت" : "You May Also Love"}
             </span>
             <h2 className="font-serif font-black text-2xl text-pink-gradient mt-1">
-              {isAr ? "مجموعات وهدايا إضافية من ميني بيك" : "Complementary Cute Kits"}
+              {isAr ? "ملحقات ومهمات إضافية مقترحة من دي سي سمارت" : "Complementary Security Gear"}
             </h2>
           </div>
 

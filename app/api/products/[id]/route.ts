@@ -47,7 +47,7 @@ export async function PATCH(
     return NextResponse.json({ success: true, product });
   } catch (error: any) {
     return NextResponse.json(
-      { error: "فشل تعديل بيانات العطر", details: error.message },
+      { error: "فشل تعديل بيانات الصنف", details: error.message },
       { status: 500 }
     );
   }
@@ -63,7 +63,7 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json(
-      { error: "فشل حذف العطر", details: error.message },
+      { error: "فشل حذف الصنف", details: error.message },
       { status: 500 }
     );
   }

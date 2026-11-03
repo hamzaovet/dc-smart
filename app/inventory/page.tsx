@@ -160,8 +160,8 @@ export default function InventoryPage() {
   const categoriesList = [
     "الكل",
     "زجاجات فاخرة",
-    "بخاخات وأغطية",
-    "زيوت عطرية فرنسية",
+    "باور سبلاي ومحولات",
+    "كاميرات مراقبة وأجهزة XVR",
     "كحول نقي",
     "تغليف وبوكسات",
     "عينات وتسترات",
@@ -181,7 +181,7 @@ export default function InventoryPage() {
                 المخزون والمشتريات وتوريد الزيوت والزجاجات
               </h1>
               <p className="text-xs text-zinc-400 mt-0.5">
-                متابعة أرصدة الزجاجات، البخاخات، الزيوت الفرنسية الخام، الكحول النقي، وبوكسات التغليف الفاخر
+                متابعة أرصدة الكاميرات، أجهزة التسجيل، كابلات الشبكات والمحاور، وحدات التخزين، ومهمات التركيب والباور سبلاي
               </p>
             </div>
           </div>
@@ -444,8 +444,8 @@ export default function InventoryPage() {
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                   >
                     <option value="زجاجات فاخرة">زجاجات فاخرة</option>
-                    <option value="بخاخات وأغطية">بخاخات وأغطية</option>
-                    <option value="زيوت عطرية فرنسية">زيوت عطرية فرنسية</option>
+                    <option value="باور سبلاي ومحولات">باور سبلاي ومحولات</option>
+                    <option value="كاميرات مراقبة وأجهزة XVR">كاميرات مراقبة وأجهزة تسجيل XVR/NVR</option>
                     <option value="كحول نقي">كحول نقي</option>
                     <option value="تغليف وبوكسات">تغليف وبوكسات</option>
                     <option value="عينات وتسترات">عينات وتسترات</option>
@@ -504,7 +504,7 @@ export default function InventoryPage() {
                   type="text"
                   value={supplier}
                   onChange={(e) => setSupplier(e.target.value)}
-                  placeholder="مثال: مطابع رويال باك / شركة جراس للعطور"
+                  placeholder="مثال: الشركة الهندسية لتوزيع أنظمة داهوا / هيكفيجن"
                   className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                 />
               </div>

@@ -79,7 +79,7 @@ export default function CheckoutPage() {
   // Success view
   if (orderSuccess) {
     const whatsappText = encodeURIComponent(
-      `مساء الخير ميني بيك (Mini Pick)، قمت بطلب أوردر جديد عبر الموقع:\n` +
+      `مساء الخير دي سي سمارت (DC Smart)، قمت بطلب أجهزة مراقبة جديدة عبر الموقع:\n` +
         `رقم الطلب: *${orderSuccess.orderNumber}*\n` +
         `الاسم: ${orderSuccess.customerName}\n` +
         `الهاتف: ${orderSuccess.customerPhone}\n` +
@@ -107,8 +107,8 @@ export default function CheckoutPage() {
             </p>
             <p className="text-xs text-zinc-400 leading-relaxed max-w-sm mx-auto">
               {isAr
-                ? "سيقوم فريق خدمة عملاء ميني بيك بالتواصل معك هاتفياً أو عبر واتساب لتأكيد شحن البوكس فوراً."
-                : "Our Mini Pick team will reach out via WhatsApp or phone to confirm prompt dispatch."}
+                ? "سيقوم فريق الدعم الفني والمبيعات في دي سي سمارت بالتواصل معك هاتفياً أو عبر واتساب لتأكيد موعد المعاينة والتركيب فوراً."
+                : "Our DC Smart technical team will reach out via WhatsApp or phone to confirm prompt installation."}
             </p>
           </div>
 
@@ -174,7 +174,7 @@ export default function CheckoutPage() {
     <div className="min-h-screen py-10 px-4 sm:px-6 max-w-7xl mx-auto">
       <div className="text-center max-w-xl mx-auto mb-10">
         <span className="text-xs uppercase tracking-widest text-pink-400 font-bold">
-          {isAr ? "خدمة العملاء والتوصيل السريع" : "Mini Pick Concierge & Fast Delivery"}
+          {isAr ? "خدمة العملاء والدعم الفني والتركيب" : "DC Smart Support & Professional Installation"}
         </span>
         <h1 className="font-serif font-black text-3xl sm:text-4xl text-pink-gradient mt-1">
           {t("checkout_title")}

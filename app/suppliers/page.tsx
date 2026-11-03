@@ -97,7 +97,7 @@ export default function SuppliersPage() {
   const [supName, setSupName] = useState("");
   const [supPhone, setSupPhone] = useState("");
   const [supCompany, setSupCompany] = useState("");
-  const [supCategory, setSupCategory] = useState("زيوت عطرية فرنسية");
+  const [supCategory, setSupCategory] = useState("كاميرات مراقبة وأجهزة تسجيل");
   const [supAddress, setSupAddress] = useState("");
   const [supOpeningBal, setSupOpeningBal] = useState("0");
   const [supNotes, setSupNotes] = useState("");
@@ -105,9 +105,9 @@ export default function SuppliersPage() {
   // Invoice Form
   const [invSupplierId, setInvSupplierId] = useState("");
   const [invItemName, setInvItemName] = useState("");
-  const [invItemCategory, setInvItemCategory] = useState("زيوت عطرية فرنسية");
+  const [invItemCategory, setInvItemCategory] = useState("كاميرات مراقبة وأجهزة تسجيل");
   const [invQty, setInvQty] = useState("10");
-  const [invUnit, setInvUnit] = useState("جرام");
+  const [invUnit, setInvUnit] = useState("قطعة");
   const [invCost, setInvCost] = useState("50");
   const [invTotal, setInvTotal] = useState("500");
   const [invPaid, setInvPaid] = useState("500");
@@ -126,7 +126,7 @@ export default function SuppliersPage() {
   const [retQty, setRetQty] = useState("5");
   const [retRefund, setRetRefund] = useState("250");
   const [retMethod, setRetMethod] = useState("DEDUCT_BALANCE");
-  const [retReason, setRetReason] = useState("بضاعة معيبة أو تلف بخاخات");
+  const [retReason, setRetReason] = useState("صنف معيب أو عطل فني في الكاميرا/الجهاز");
 
   const [saving, setSaving] = useState(false);
 
@@ -352,11 +352,11 @@ export default function SuppliersPage() {
         {/* Header Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-zinc-900/80 border border-pink-500/20 p-5 rounded-2xl shadow-xl">
           <div className="flex items-center gap-3">
-            <span className="p-2.5 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-400">
+            <span className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
               <Handshake size={22} />
             </span>
             <div>
-              <h1 className="text-xl font-black font-serif text-pink-gradient">
+              <h1 className="text-xl font-black font-serif text-cyan-400 font-bold">
                 نظام الموردين والمشتريات وكشوف الحسابات
               </h1>
               <p className="text-xs text-zinc-400 mt-0.5">
@@ -383,7 +383,7 @@ export default function SuppliersPage() {
                 if (suppliers.length > 0) setInvSupplierId(suppliers[0].id);
                 setIsAddInvoiceOpen(true);
               }}
-              className="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-pink-300 text-xs font-bold border border-zinc-700 flex items-center gap-1.5 transition"
+              className="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-cyan-300 text-xs font-bold border border-zinc-700 flex items-center gap-1.5 transition"
             >
               <Package size={15} />
               <span>فاتورة شراء بضاعة 📦</span>
@@ -412,7 +412,7 @@ export default function SuppliersPage() {
                 {totalPurchasesSum.toLocaleString()} ج.م
               </div>
             </div>
-            <div className="p-3 rounded-xl bg-pink-500/10 text-pink-400">
+            <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400">
               <Package size={24} />
             </div>
           </div>
@@ -434,13 +434,13 @@ export default function SuppliersPage() {
               <span className="text-[11px] text-zinc-400">الرصيد الحالي المستحق للموردين (آجل)</span>
               <div
                 className={`font-serif font-black text-2xl mt-1 ${
-                  totalBalanceDue > 0 ? "text-pink-400" : "text-emerald-400"
+                  totalBalanceDue > 0 ? "text-cyan-400" : "text-emerald-400"
                 }`}
               >
                 {totalBalanceDue.toLocaleString()} ج.م
               </div>
             </div>
-            <div className="p-3 rounded-xl bg-pink-500/20 text-pink-300">
+            <div className="p-3 rounded-xl bg-pink-500/20 text-cyan-300">
               <Wallet size={24} />
             </div>
           </div>
@@ -465,7 +465,7 @@ export default function SuppliersPage() {
                 }}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
                   isActive
-                    ? "bg-pink-500 text-black shadow-md"
+                    ? "bg-cyan-500 text-black shadow-md"
                     : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800"
                 }`}
               >
@@ -508,7 +508,7 @@ export default function SuppliersPage() {
                           )}
                         </td>
 
-                        <td className="py-3 px-4 font-mono font-bold text-pink-300">
+                        <td className="py-3 px-4 font-mono font-bold text-cyan-300">
                           {s.phone}
                         </td>
 
@@ -533,7 +533,7 @@ export default function SuppliersPage() {
                         <td className="py-3 px-4">
                           <span
                             className={`font-mono font-black text-sm ${
-                              s.currentBalance > 0 ? "text-pink-400" : "text-emerald-400"
+                              s.currentBalance > 0 ? "text-cyan-400" : "text-emerald-400"
                             }`}
                           >
                             {s.currentBalance.toLocaleString()} ج.م
@@ -543,7 +543,7 @@ export default function SuppliersPage() {
                         <td className="py-3 px-4 text-center">
                           <button
                             onClick={() => handleOpenStatement(s.id)}
-                            className="px-3 py-1.5 rounded-xl bg-pink-500/20 hover:bg-pink-500/30 text-pink-300 border border-pink-500/40 text-[11px] font-bold flex items-center justify-center gap-1 mx-auto transition"
+                            className="px-3 py-1.5 rounded-xl bg-pink-500/20 hover:bg-pink-500/30 text-cyan-300 border border-pink-500/40 text-[11px] font-bold flex items-center justify-center gap-1 mx-auto transition"
                           >
                             <FileText size={13} />
                             <span>كشف الحساب</span>
@@ -590,7 +590,7 @@ export default function SuppliersPage() {
                       }
                       return (
                         <tr key={inv.id} className="hover:bg-zinc-900/40">
-                          <td className="py-3 px-4 font-mono font-bold text-pink-400">
+                          <td className="py-3 px-4 font-mono font-bold text-cyan-400">
                             #{inv.invoiceNumber}
                           </td>
                           <td className="py-3 px-4 font-bold text-zinc-200">
@@ -599,7 +599,7 @@ export default function SuppliersPage() {
                           <td className="py-3 px-4">
                             {parsed.map((item, idx) => (
                               <div key={idx} className="text-zinc-300">
-                                {item.name} × <span className="font-bold text-pink-300">{item.quantity} {item.unit || "قطعة"}</span>
+                                {item.name} × <span className="font-bold text-cyan-300">{item.quantity} {item.unit || "قطعة"}</span>
                               </div>
                             ))}
                           </td>
@@ -609,7 +609,7 @@ export default function SuppliersPage() {
                           <td className="py-3 px-4 font-mono font-bold text-emerald-400">
                             {inv.paidAmount.toLocaleString()} ج.م
                           </td>
-                          <td className="py-3 px-4 font-mono font-bold text-pink-400">
+                          <td className="py-3 px-4 font-mono font-bold text-cyan-400">
                             {inv.remainingAmount.toLocaleString()} ج.م
                           </td>
                           <td className="py-3 px-4 text-zinc-300">
@@ -651,7 +651,7 @@ export default function SuppliersPage() {
                   <tbody className="divide-y divide-zinc-800/60">
                     {payments.map((p) => (
                       <tr key={p.id} className="hover:bg-zinc-900/40">
-                        <td className="py-3 px-4 font-mono font-bold text-pink-400">
+                        <td className="py-3 px-4 font-mono font-bold text-cyan-400">
                           #{p.paymentNumber}
                         </td>
                         <td className="py-3 px-4 font-bold text-zinc-200">
@@ -702,7 +702,7 @@ export default function SuppliersPage() {
                   <tbody className="divide-y divide-zinc-800/60">
                     {returns.map((ret) => (
                       <tr key={ret.id} className="hover:bg-zinc-900/40">
-                        <td className="py-3 px-4 font-mono font-bold text-pink-400">
+                        <td className="py-3 px-4 font-mono font-bold text-cyan-400">
                           #{ret.returnNumber}
                         </td>
                         <td className="py-3 px-4 font-bold text-zinc-200">
@@ -740,9 +740,9 @@ export default function SuppliersPage() {
       {/* MODAL 1: Add Supplier */}
       {isAddSupplierOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#120e1c] border border-pink-500/30 rounded-2xl p-6 shadow-2xl relative text-xs">
+          <div className="w-full max-w-md bg-[#120e1c] border border-cyan-500/30 rounded-2xl p-6 shadow-2xl relative text-xs">
             <div className="flex items-center justify-between pb-3 border-b border-zinc-800 mb-4">
-              <h3 className="text-base font-bold text-pink-300 font-serif flex items-center gap-2">
+              <h3 className="text-base font-bold text-cyan-300 font-serif flex items-center gap-2">
                 <Handshake size={18} />
                 <span>إضافة مورد / شريك توريد جديد</span>
               </h3>
@@ -762,8 +762,8 @@ export default function SuppliersPage() {
                   required
                   value={supName}
                   onChange={(e) => setSupName(e.target.value)}
-                  placeholder="مثال: شركة جراس للزيوت الفرنسية"
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-pink-500"
+                  placeholder="مثال: الشركة الهندسية للأنظمة الأمنية (وكيل داهوا / هيكفيجن)"
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
@@ -786,11 +786,11 @@ export default function SuppliersPage() {
                     onChange={(e) => setSupCategory(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                   >
-                    <option value="زيوت عطرية فرنسية">زيوت عطرية فرنسية</option>
-                    <option value="زجاجات وكريستال">زجاجات وكريستال</option>
-                    <option value="بخاخات وأغطية">بخاخات وأغطية</option>
-                    <option value="بوكسات وتغليف هدايا">بوكسات وتغليف هدايا</option>
-                    <option value="كحول طبي نقي">كحول طبي نقي</option>
+                    <option value="كاميرات مراقبة وأجهزة تسجيل">كاميرات مراقبة وأجهزة تسجيل (Dahua / Hikvision / Uniarch)</option>
+                    <option value="كابلات ومواسير ووصلات">كابلات شبكات ومحاور ووصلات BNC وجاكات باور</option>
+                    <option value="هارد ديسك وتخزين وراكات">هارد ديسك وتخزين وراكات تجميع RACK</option>
+                    <option value="باور سبلاي ومحولات">باور سبلاي ومحولات مركزية ومهمات كهرباء</option>
+                    <option value="شاشات عرض وأجهزة شبكات">شاشات مراقبة وسويتشات PoE وأجهزة شبكات</option>
                   </select>
                 </div>
               </div>
@@ -802,7 +802,7 @@ export default function SuppliersPage() {
                     type="text"
                     value={supCompany}
                     onChange={(e) => setSupCompany(e.target.value)}
-                    placeholder="مطابع رويال باك"
+                    placeholder="الموزع المعتمد لأنظمة المراقبة (Dahua / Hikvision)"
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                   />
                 </div>
@@ -824,7 +824,7 @@ export default function SuppliersPage() {
                   type="text"
                   value={supAddress}
                   onChange={(e) => setSupAddress(e.target.value)}
-                  placeholder="القاهرة، مدينة بدر، المنطقة الصناعية"
+                  placeholder="طنطا / القاهرة — سوق التكنولوجيا وموزعو الأنظمة الأمنية"
                   className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                 />
               </div>
@@ -853,9 +853,9 @@ export default function SuppliersPage() {
       {/* MODAL 2: Add Purchase Invoice */}
       {isAddInvoiceOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-[#120e1c] border border-pink-500/30 rounded-2xl p-6 shadow-2xl relative text-xs">
+          <div className="w-full max-w-lg bg-[#120e1c] border border-cyan-500/30 rounded-2xl p-6 shadow-2xl relative text-xs">
             <div className="flex items-center justify-between pb-3 border-b border-zinc-800 mb-4">
-              <h3 className="text-base font-bold text-pink-300 font-serif flex items-center gap-2">
+              <h3 className="text-base font-bold text-cyan-300 font-serif flex items-center gap-2">
                 <Package size={18} />
                 <span>تسجيل فاتورة شراء وتوريد بضاعة جديدة</span>
               </h3>
@@ -893,7 +893,7 @@ export default function SuppliersPage() {
                     required
                     value={invItemName}
                     onChange={(e) => setInvItemName(e.target.value)}
-                    placeholder="مثال: زيت سوفاج إلكسير خام / زجاجات 100 مل"
+                    placeholder="مثال: كاميرا داهوا خارجي 2 ميجا Full Color / هارد 1 تيرا سيجيت"
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                   />
                 </div>
@@ -904,11 +904,11 @@ export default function SuppliersPage() {
                     onChange={(e) => setInvItemCategory(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                   >
-                    <option value="زيوت عطرية فرنسية">زيوت عطرية فرنسية</option>
-                    <option value="زجاجات فاخرة">زجاجات فاخرة</option>
-                    <option value="بخاخات وأغطية">بخاخات وأغطية</option>
-                    <option value="تغليف وبوكسات">تغليف وبوكسات</option>
-                    <option value="كحول نقي">كحول نقي</option>
+                    <option value="كاميرات مراقبة وأجهزة تسجيل">كاميرات مراقبة وأجهزة تسجيل</option>
+                    <option value="كابلات ومواسير ووصلات">كابلات شبكات ومواسير ووصلات</option>
+                    <option value="هارد ديسك وتخزين">هارد ديسك وتخزين وراكات</option>
+                    <option value="باور سبلاي ومحولات">باور سبلاي ومحولات ومستلزمات كهرباء</option>
+                    <option value="شاشات وأجهزة شبكات">شاشات عرض وأجهزة شبكات وسويتشات</option>
                   </select>
                 </div>
               </div>
@@ -938,11 +938,11 @@ export default function SuppliersPage() {
                     onChange={(e) => setInvUnit(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                   >
-                    <option value="جرام">جرام</option>
                     <option value="قطعة">قطعة</option>
-                    <option value="لتر">لتر</option>
-                    <option value="بوكس">بوكس</option>
-                    <option value="تولة">تولة</option>
+                    <option value="لفة (305 متر)">لفة (305 متر)</option>
+                    <option value="متر">متر</option>
+                    <option value="طقم / كيت">طقم / كيت</option>
+                    <option value="كرتونة">كرتونة</option>
                   </select>
                 </div>
                 <div>
@@ -972,7 +972,7 @@ export default function SuppliersPage() {
                     required
                     value={invTotal}
                     onChange={(e) => setInvTotal(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono font-bold text-pink-400"
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono font-bold text-cyan-400"
                   />
                 </div>
                 <div>
@@ -999,9 +999,9 @@ export default function SuppliersPage() {
                 </div>
               </div>
 
-              <div className="p-2.5 rounded-xl bg-pink-500/10 border border-pink-500/20 text-zinc-300 flex justify-between items-center">
+              <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-pink-500/20 text-zinc-300 flex justify-between items-center">
                 <span>المبلغ المتبقي كدين على البوتيك للمورد:</span>
-                <span className="font-mono font-black text-pink-400">
+                <span className="font-mono font-black text-cyan-400">
                   {Math.max(0, (Number(invTotal) || 0) - (Number(invPaid) || 0))} ج.م
                 </span>
               </div>
@@ -1044,7 +1044,7 @@ export default function SuppliersPage() {
       {/* MODAL 3: Record Payment */}
       {isAddPaymentOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#120e1c] border border-pink-500/30 rounded-2xl p-6 shadow-2xl relative text-xs">
+          <div className="w-full max-w-md bg-[#120e1c] border border-cyan-500/30 rounded-2xl p-6 shadow-2xl relative text-xs">
             <div className="flex items-center justify-between pb-3 border-b border-zinc-800 mb-4">
               <h3 className="text-base font-bold text-emerald-400 font-serif flex items-center gap-2">
                 <DollarSign size={18} />
@@ -1137,10 +1137,10 @@ export default function SuppliersPage() {
       {/* MODAL 4: Supplier Statement of Account (كشف حساب المورد) */}
       {statementSupplier && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl bg-[#120e1c] border border-pink-500/30 rounded-2xl p-6 shadow-2xl relative text-xs max-h-[85vh] overflow-y-auto">
+          <div className="w-full max-w-2xl bg-[#120e1c] border border-cyan-500/30 rounded-2xl p-6 shadow-2xl relative text-xs max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-zinc-800 mb-4">
               <div>
-                <h3 className="text-base font-black text-pink-gradient font-serif flex items-center gap-2">
+                <h3 className="text-base font-black text-cyan-400 font-bold font-serif flex items-center gap-2">
                   <span>كشف حساب المورد: {statementSupplier.name}</span>
                 </h3>
                 <p className="text-[11px] text-zinc-400 mt-0.5">
@@ -1175,9 +1175,9 @@ export default function SuppliersPage() {
                   {statementSupplier.totalPaid} ج.م
                 </span>
               </div>
-              <div className="p-2.5 rounded-xl bg-pink-500/10 border border-pink-500/30">
-                <span className="text-[10px] text-pink-300 block font-bold">الرصيد المستحق:</span>
-                <span className="font-mono font-black text-pink-400 text-sm">
+              <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30">
+                <span className="text-[10px] text-cyan-300 block font-bold">الرصيد المستحق:</span>
+                <span className="font-mono font-black text-cyan-400 text-sm">
                   {statementSupplier.currentBalance} ج.م
                 </span>
               </div>
@@ -1246,7 +1246,7 @@ export default function SuppliersPage() {
               </button>
               <button
                 onClick={() => setStatementSupplier(null)}
-                className="px-4 py-2 rounded-xl bg-pink-500 text-black font-bold"
+                className="px-4 py-2 rounded-xl bg-cyan-500 text-black font-bold"
               >
                 إغلاق
               </button>

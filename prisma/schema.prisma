@@ -45,9 +45,9 @@ model User {
 model StoreSettings {
   id                    String   @id @default("rovy_settings")
   isEmergencyLockdown   Boolean  @default(false)
-  storeNameAr           String   @default("روفي ستور — للعطور الفاخرة")
+  storeNameAr           String   @default("دي سي سمارت — للأنظمة الأمنية والتحكم الذكي")
   storeNameEn           String   @default("Rovy Store — Luxury Fragrances")
-  taglineAr             String   @default("أفخم العطور العالمية والبدائل المستوحاة بثبات وأصالة لا تُقاوم")
+  taglineAr             String   @default("كاميرات مراقبة متطورة بدقة 4K و Full Color، أجهزة XVR/NVR، شبكات وحلول أمنية ذكية")
   taglineEn             String   @default("Ultra-luxury designer & inspired niche fragrances")
   whatsappPhone         String   @default("01503012856")
   hotline               String   @default("01503012856")
@@ -109,11 +109,11 @@ model Product {
 
   brandEn         String
 
-  type            String   @default("ORIGINAL") // ORIGINAL (أصلي 100%), TESTER (تيستر أصلي), HIGH_COPY (ماستر كوبي), INSPIRED (بديل مستوحى)
+  type            String   @default("ORIGINAL") // ORIGINAL (كاميرات مراقبة), TESTER (أجهزة تسجيل), HIGH_COPY (كابلات وتخزين), INSPIRED (باور وملحقات)
 
-  concentration   String   @default("Eau de Parfum") // Eau de Parfum, Extrait de Parfum, Eau de Toilette
+  concentration   String   @default("2MP Full Color") // 2MP Full Color, 5MP Ultra HD, 8MP 4K, 4 Channels, 8 Channels, etc.
 
-  volume          String   @default("100 ml") // 50 ml, 100 ml, 200 ml
+  volume          String   @default("Outdoor IP67") // Outdoor IP67, Indoor Dome, PTZ Wi-Fi, etc.
 
   price           Float
 
@@ -123,7 +123,7 @@ model Product {
 
   isFeatured      Boolean  @default(false)
 
-  isWinter        Boolean  @default(false) // Winter Collection flag (like Zidances winter-1)
+  isWinter        Boolean  @default(false) // Most Requested Bundles flag
 
   isBestSeller    Boolean  @default(false)
 
@@ -139,15 +139,15 @@ model Product {
 
   descriptionEn   String   @db.Text
 
-  topNotesAr      String   // النوتات الافتتاحية
+  topNotesAr      String   // المواصفات الأساسية
 
   topNotesEn      String
 
-  heartNotesAr    String   // قلب العطر
+  heartNotesAr    String   // التجهيزات والعدسات
 
   heartNotesEn    String
 
-  baseNotesAr     String   // قاعدة العطر
+  baseNotesAr     String   // الملحقات والضمان
 
   baseNotesEn     String
 
@@ -259,7 +259,7 @@ model InventoryItem {
 
   name        String
 
-  category    String   // زجاجات فاخرة، بخاخات، زيوت عطرية، كحول نقي، بوكسات وتغليف، عينات هدايا
+  category    String   // كاميرات مراقبة، أجهزة تسجيل، كابلات، هارد ديسك، باور سبلاي، راكات تجميع
 
   quantity    Int      @default(0)
 
@@ -377,7 +377,7 @@ model Supplier {
 
   company        String?
 
-  category       String            @default("خامات وزيوت") // زيوت عطرية، زجاجات وكريستال، بخاخات، كرتون وبوكسات، كحول
+  category       String            @default("مهمات وتركيبات") // كاميرات، أجهزة تسجيل، كابلات، هاردات، باور ومحولات
 
   address        String?
 

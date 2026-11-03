@@ -15,7 +15,7 @@ interface LanguageContextType {
 const translations: Record<Language, Record<string, string>> = {
   ar: {
     // Brand & Header
-    store_name: "ميني بيك",
+    store_name: "دي سي سمارت",
     store_subname: "بوتيك الألعاب التركيبية والهدايا الترند",
     nav_home: "الرئيسية",
     nav_winter: "الأكثر طلباً 🔥",
@@ -102,7 +102,7 @@ const translations: Record<Language, Record<string, string>> = {
     checkout_whatsapp_track: "متابعة الطلب عبر واتساب المتجر",
 
     // Guarantees
-    guarantee_title: "ضمان ميني بيك الذهبي",
+    guarantee_title: "ضمان دي سي سمارت المعتمد عامين",
     guarantee_inspection: "معاينة البوكس والتأكد من سلامة كافة القطع قبل الدفع والاستلام",
     guarantee_lasting: "خامات أصلية آمنة 100% مع كتالوجات وخطوات تركيب واضحة",
     guarantee_shipping: "تغليف هدايا بينك أنيق وشحن سريع لكافة محافظات مصر",
@@ -130,7 +130,7 @@ const translations: Record<Language, Record<string, string>> = {
   },
   en: {
     // Brand & Header
-    store_name: "MINI PICK",
+    store_name: "DC SMART",
     store_subname: "Nano Blocks & Cute Aesthetic Boutique",
     nav_home: "Home",
     nav_winter: "Trending Now 🔥",
@@ -217,7 +217,7 @@ const translations: Record<Language, Record<string, string>> = {
     checkout_whatsapp_track: "Track via WhatsApp Concierge",
 
     // Guarantees
-    guarantee_title: "The Mini Pick Golden Promise",
+    guarantee_title: "DC Smart 2-Year Full Warranty",
     guarantee_inspection: "Inspect & verify all pieces before paying courier",
     guarantee_lasting: "Safe, premium high-precision parts with step-by-step guides",
     guarantee_shipping: "Signature cute pink gift packaging & fast tracked delivery",

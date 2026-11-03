@@ -23,23 +23,23 @@ export interface StoreSettingsData {
 }
 
 const defaultSettings: StoreSettingsData = {
-  storeNameAr: "ميني بيك — متجر الهدايا والترندات اللطيفة",
-  storeNameEn: "Mini Pick — Aesthetic Gifts & Lifestyle",
-  taglineAr: "عالمكِ الوردي الأنيق لأجمل مكعبات النانو، البيدازلنج الكريستالي، والمنظمات الكيوت",
-  taglineEn: "Your Aesthetic Pink World for Nano Blocks, Bedazzling & Cute Stationery",
-  whatsappPhone: "01050757837",
-  hotline: "01050757837",
-  secondaryPhone: "01069819381",
+  storeNameAr: "دي سي سمارت — للأنظمة الأمنية والتحكم الذكي",
+  storeNameEn: "DC Smart — Smart Security & Technology Solutions",
+  taglineAr: "كاميرات مراقبة متطورة بدقة 4K و Full Color، أجهزة XVR/NVR، شبكات وحلول أمنية ذكية",
+  taglineEn: "Advanced 4K & Full Color CCTV Surveillance, XVR/NVR Recording & Smart Security Solutions",
+  whatsappPhone: "01281248731",
+  hotline: "01008657085",
+  secondaryPhone: "01007302685",
   googleMapsUrl: "https://maps.google.com/?q=Tanta,Gharbia,Egypt",
   addressAr: "طنطا — محافظة الغربية — جمهورية مصر العربية",
   addressEn: "Tanta, Gharbia Governorate, Egypt",
-  workingHoursAr: "يومياً من 11 صباحاً حتى 11 مساءً",
-  workingHoursEn: "Daily from 11:00 AM to 11:00 PM",
-  instagramHandle: "minipick.eg",
-  announcementAr: "✨ شحن مجاني لكافة محافظات مصر للطلبات فوق 500 ج.م + هدايا ستيكرات كيوت مجانية مع كل أوردر ✨",
-  announcementEn: "✨ Free express shipping across Egypt on orders over 500 EGP + free cute stickers with every order ✨",
-  deliveryFee: 45.0,
-  freeShippingThreshold: 500.0,
+  workingHoursAr: "يومياً من 9:00 صباحاً حتى 11:00 مساءً",
+  workingHoursEn: "Daily from 9:00 AM to 11:00 PM",
+  instagramHandle: "dcsmart.cctv",
+  announcementAr: "🛡️ ضمان عامين شامل استبدال فوري لكافة كاميرات المراقبة وأجهزة التسجيل + معاينة وتركيب احترافي",
+  announcementEn: "🛡️ 2-Year Full Replacement Warranty on all CCTV Cameras & DVRs + Professional Installation",
+  deliveryFee: 50.0,
+  freeShippingThreshold: 5000.0,
 };
 
 interface StoreSettingsContextType {

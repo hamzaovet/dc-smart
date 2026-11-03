@@ -1,5 +1,5 @@
 /**
- * Web Audio API Sound Synthesizer for Mini Pick
+ * Web Audio API Sound Synthesizer for DC Smart
  * Pure synthesis with zero external dependencies.
  */
 

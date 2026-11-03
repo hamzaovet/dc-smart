@@ -197,7 +197,7 @@ export default function SettingsPage() {
                   className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono focus:outline-none focus:border-cyan-500"
                 />
                 <span className="text-[10.5px] text-zinc-500 mt-1 block">
-                  ترسل له رسائل زر &quot;الطلب عبر واتساب&quot; وتفاصيل العطور تلقائياً.
+                  ترسل له رسائل زر &quot;الطلب عبر واتساب&quot; وتفاصيل المنظومة تلقائياً.
                 </span>
               </div>
 

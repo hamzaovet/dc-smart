@@ -335,7 +335,7 @@ export default function DashboardOrdersPage() {
               const cleanPhone = order.customerPhone.replace(/\D/g, "");
               const waPhone = cleanPhone.startsWith("0") ? `2${cleanPhone}` : cleanPhone;
               const waMsg = encodeURIComponent(
-                `مرحباً ${order.customerName}، معكم ميني بيك للعطور الفاخرة 👑 بخصوص طلبكم رقم #${order.orderNumber}.`
+                `مرحباً ${order.customerName}، معكم دي سي سمارت للأنظمة الأمنية والمراقبة 🛡️ بخصوص طلبكم رقم #${order.orderNumber}.`
               );
               const waUrl = `https://wa.me/${waPhone}?text=${waMsg}`;
 
@@ -661,7 +661,7 @@ export default function DashboardOrdersPage() {
           <div className="w-full max-w-md bg-[#120e1c] border border-pink-500/30 rounded-2xl p-6 shadow-2xl relative text-xs">
             <h3 className="text-base font-bold text-pink-300 font-serif mb-3 flex items-center gap-2">
               <MapPin size={20} className="text-pink-400" />
-              <span>مناطق وتكلفة الشحن (ميني بيك)</span>
+              <span>مناطق وتكلفة التركيب والمعاينة (دي سي سمارت)</span>
             </h3>
 
             <div className="space-y-2 mt-4">

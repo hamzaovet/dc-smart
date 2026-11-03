@@ -589,16 +589,19 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
     return encodeURIComponent(msg);
   };
 
-  const openWhatsApp = (q: Quote, qItems: QuoteItem[]) => {
-    const cleanPhone = q.clientPhone.replace(/\D/g, "");
+  const openWhatsAppDirect = (phone: string) => {
+    const cleanPhone = phone.replace(/\D/g, "");
     const phoneWithCountry = cleanPhone.startsWith("20")
       ? cleanPhone
       : cleanPhone.startsWith("0")
       ? "2" + cleanPhone
       : "20" + cleanPhone;
 
-    const encodedMsg = buildWhatsAppMessage(q, qItems);
-    window.open(`https://wa.me/${phoneWithCountry}?text=${encodedMsg}`, "_blank");
+    window.open(`https://wa.me/${phoneWithCountry}`, "_blank");
+  };
+
+  const openWhatsApp = (q: Quote, qItems: QuoteItem[]) => {
+    openWhatsAppDirect(q.clientPhone);
   };
 
   // Download Quote as PNG Image
@@ -682,12 +685,12 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
     }
   };
 
-  // Share as Image via WhatsApp / Native Share
+  // Share as Image via WhatsApp / Native Share (Strictly NO plain text dumps!)
   const handleShareAsImage = async (q: Quote) => {
     if (!printRef.current) return;
     try {
       setIsExporting(true);
-      setExportMessage("جاري إعداد صورة العرض للإرسال عبر واتساب...");
+      setExportMessage("جاري إعداد صورة عرض السعر للإرسال عبر واتساب...");
 
       const blob = await toBlob(printRef.current, {
         quality: 0.98,
@@ -697,7 +700,7 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
 
       if (!blob) throw new Error("تعذر إنشاء صورة العرض");
 
-      const file = new File([blob], `عرض-سعر-${q.quoteNumber}.png`, {
+      const file = new File([blob], `عرض-سعر-دي-سي-سمارت-${q.quoteNumber}.png`, {
         type: "image/png",
       });
 
@@ -705,38 +708,94 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
       if (typeof navigator !== "undefined" && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
-          title: `عرض سعر ${q.quoteNumber} — دي سي سمارت`,
-          text: `عرض سعر رسمي معتمد من شركة دي سي سمارت لأنظمة المراقبة للعميل: ${q.clientName}`,
+          title: `عرض سعر دي سي سمارت — ${q.quoteNumber}`,
+          text: `عرض سعر رسمي معتمد من دي سي سمارت للأنظمة الأمنية للعميل: ${q.clientName}`,
         });
         setExportMessage(null);
         return;
       }
 
-      // 2. Desktop Fallback: Copy to Clipboard so user can press Ctrl+V in WhatsApp Web
+      // 2. Desktop Fallback: Copy to Clipboard AND download file automatically
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `عرض-سعر-دي-سي-سمارت-${q.quoteNumber}.png`;
+      a.click();
+
       try {
         await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
         alert(
-          "📋 تم نسخ صورة عرض السعر للحافظة بنجاح!\n\nسيتم الآن فتح محادثة العميل على واتساب، اضغط على (Ctrl + V / لصق) لإرسال الصورة فوراً كصورة مرفقة."
+          "📋 تم نسخ صورة عرض السعر للحافظة وتنزيلها تلقائياً على جهازك! 📥\n\nتم فتح محادثة العميل على واتساب — اضغط الآن (Ctrl + V / لصق) لإرسال صورة عرض السعر مباشرةً دون أي نصوص مكررة."
         );
       } catch (clipErr) {
-        // 3. Fallback: Download file
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `عرض-سعر-${q.quoteNumber}.png`;
-        a.click();
         alert(
-          "📥 تم تنزيل صورة عرض السعر على جهازك.\n\nيمكنك الآن إرفاقها للعميل في محادثة الواتساب التي ستفتح الآن."
+          "📥 تم تنزيل صورة عرض السعر على جهازك بنجاح!\n\nتم فتح محادثة العميل على واتساب — اسحب الصورة وأفلتها في المحادثة لإرسالها مباشرةً."
         );
       }
 
-      // Open WhatsApp chat
-      openWhatsApp(q, previewItems);
+      // Open WhatsApp chat directly with NO text dump
+      openWhatsAppDirect(q.clientPhone);
       setExportMessage(null);
     } catch (err: any) {
       console.error("Share image error:", err);
-      // Fallback to text WhatsApp
-      openWhatsApp(q, previewItems);
+      alert("حدث خطأ أثناء تصدير الصورة للمشاركة");
+      setExportMessage(null);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Share as PDF via WhatsApp
+  const handleShareAsPdf = async (q: Quote) => {
+    if (!printRef.current) return;
+    try {
+      setIsExporting(true);
+      setExportMessage("جاري إعداد ملف PDF المعتمد للإرسال عبر واتساب...");
+
+      const dataUrl = await toPng(printRef.current, {
+        quality: 0.98,
+        pixelRatio: 2,
+        backgroundColor: previewTheme === "dark" ? "#0f172a" : "#ffffff",
+      });
+
+      const img = new Image();
+      img.src = dataUrl;
+      await new Promise((resolve) => (img.onload = resolve));
+
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = (img.height * imgWidth) / img.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(dataUrl, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(dataUrl, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`عرض-سعر-دي-سي-سمارت-${q.quoteNumber}.pdf`);
+
+      alert(
+        "📑 تم إنشاء وتنزيل ملف PDF المعتمد لعرض السعر بنجاح! 📥\n\nتم فتح محادثة العميل على واتساب — اسحب ملف الـ PDF وأفلته في الشات لإرساله مباشرةً للعميل."
+      );
+
+      openWhatsAppDirect(q.clientPhone);
+      setExportMessage(null);
+    } catch (err: any) {
+      console.error("Share PDF error:", err);
+      alert("حدث خطأ أثناء تجهيز ملف PDF للمشاركة");
       setExportMessage(null);
     } finally {
       setIsExporting(false);
@@ -1455,9 +1514,14 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
                                 <Edit3 size={14} />
                               </button>
                               <button
-                                onClick={() => openWhatsApp(q, parsedItems)}
+                                onClick={() => {
+                                  setPreviewQuote(q);
+                                  setPreviewItems(parsedItems);
+                                  setIsPreviewOpen(true);
+                                  setTimeout(() => handleShareAsImage(q), 300);
+                                }}
                                 className="p-1.5 rounded-lg bg-emerald-950/60 text-emerald-400 hover:bg-emerald-900 border border-emerald-500/30 transition"
-                                title="إرسال عبر واتساب"
+                                title="إرسال عرض السعر كصورة عبر واتساب"
                               >
                                 <Share2 size={14} />
                               </button>
@@ -1672,11 +1736,23 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
                   type="button"
                   disabled={isExporting}
                   onClick={() => handleShareAsImage(previewQuote)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition flex items-center gap-1.5 disabled:opacity-50"
-                  title="إرسال صورة العرض عبر واتساب للعميل"
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition flex items-center gap-1.5 disabled:opacity-50 shadow-md"
+                  title="إرسال صورة العرض عبر واتساب للعميل (صورة فقط بدون نصوص)"
                 >
                   <Share2 size={14} />
-                  <span>إرسال واتساب (صورة)</span>
+                  <span>واتساب (صورة) 🖼️</span>
+                </button>
+
+                {/* Share as PDF to WhatsApp */}
+                <button
+                  type="button"
+                  disabled={isExporting}
+                  onClick={() => handleShareAsPdf(previewQuote)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-600 hover:bg-teal-500 text-white transition flex items-center gap-1.5 disabled:opacity-50 shadow-md"
+                  title="إرسال ملف PDF معتمد عبر واتساب للعميل"
+                >
+                  <FileText size={14} />
+                  <span>واتساب (PDF) 📑</span>
                 </button>
 
                 {/* Native Browser Print */}
@@ -1730,13 +1806,17 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
                 {/* Brand & Slogan */}
                 <div className="flex items-center gap-4 text-center sm:text-right">
                   <div
-                    className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black text-2xl shadow-lg ${
+                    className={`w-16 h-16 rounded-2xl overflow-hidden flex items-center justify-center shadow-lg border border-cyan-500/40 shrink-0 ${
                       previewTheme === "dark"
-                        ? "bg-gradient-to-br from-cyan-500 to-blue-600 text-slate-950 shadow-cyan-500/20"
-                        : "bg-slate-900 text-cyan-400 shadow-slate-900/20"
-                    } print:border-2 print:border-black print:bg-transparent print:text-black`}
+                        ? "bg-slate-950"
+                        : "bg-slate-100"
+                    } print:border-2 print:border-black`}
                   >
-                    🛡️
+                    <img
+                      src="/logo.jpg"
+                      alt="DC Smart Logo"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div className="space-y-1">
                     <h2
@@ -1751,7 +1831,7 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
                         previewTheme === "dark" ? "text-cyan-400" : "text-cyan-700"
                       } print:text-gray-800`}
                     >
-                      DC SMART CCTV & ADVANCED SURVEILLANCE SYSTEMS
+                      Smart Security & Technology Solutions
                     </p>
                     <div
                       className={`text-[11px] font-medium flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-1 ${

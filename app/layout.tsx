@@ -9,22 +9,27 @@ import CartDrawer from "../components/CartDrawer";
 import Footer from "../components/Footer";
 
 export const metadata: Metadata = {
-  title: "ميني بيك | Mini Pick — بوتيك الألعاب التركيبية والهدايا الترند والنيش",
+  title: "دي سي سمارت | DC Smart — كاميرات مراقبة وأنظمة أمنية وتحكم ذكي",
   description:
-    "أرقى العطور العالمية، التيسترات الأصلية المعتمدة وبدائل النيش الملكية. دقة وفخامة استثنائي مع خدمة الدفع عند الاستلام والتجربة قبل الدفع.",
+    "أنظمة المراقبة التلفزيونية CCTV، كاميرات داهوا وهيكفيجن ويوني آرك، أجهزة XVR و NVR، شبكات وحلول أمنية ذكية في طنطا وجميع المحافظات.",
   keywords: [
-    "ميني بيك",
-    "عطور",
-    "بدائل نيش",
-    "عطور شتوية",
-    "تيسترات أصلية",
-    "عطور فرنسية",
-    "Mini Pick",
-    "Perfumes Egypt",
-    "Winter Fragrances",
+    "دي سي سمارت",
+    "DC Smart",
+    "كاميرات مراقبة",
+    "داهوا",
+    "هيكفيجن",
+    "أنظمة أمنية",
+    "CCTV",
+    "Dahua",
+    "Hikvision",
+    "Uniarch",
+    "طنطا",
   ],
   icons: {
-    icon: "/app-icon.png",
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/app-icon.png", type: "image/png" },
+    ],
     apple: "/app-icon.png",
   },
 };
@@ -36,7 +41,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ar" dir="rtl" className="dark">
-      <body className="min-h-screen bg-[#07060a] text-[#f7f4ed] antialiased flex flex-col justify-between selection:bg-pink-500 selection:text-black">
+      <body className="min-h-screen bg-[#07060a] text-[#f7f4ed] antialiased flex flex-col justify-between selection:bg-cyan-500 selection:text-black">
         <LanguageProvider>
           <StoreSettingsProvider>
             <StaffProvider>

@@ -271,7 +271,7 @@ export default function CustomersPage() {
                     const cleanPhone = cust.phone.replace(/\D/g, "");
                     const waPhone = cleanPhone.startsWith("0") ? `2${cleanPhone}` : cleanPhone;
                     const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(
-                      `أهلاً بك يا فندم ${cust.name}، معك ميني بيك للعطور الفاخرة 👑 نتشرف بخدمتك دائماً.`
+                      `أهلاً بك يا فندم ${cust.name}، معك دي سي سمارت للأنظمة الأمنية والمراقبة 🛡️ نتشرف بخدمتك دائماً.`
                     )}`;
 
                     return (
@@ -413,12 +413,12 @@ export default function CustomersPage() {
               </div>
 
               <div>
-                <label className="block text-zinc-300 font-medium mb-1">ملاحظات العميل والتفضيلات العطرية:</label>
+                <label className="block text-zinc-300 font-medium mb-1">ملاحظات العميل والتفضيلات الفنية:</label>
                 <input
                   type="text"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="مثال: يفضل عطور العود والبخور والشتوي"
+                  placeholder="مثال: يفضل أنظمة داهوا Full Color وكاميرات خارجية 5 ميجا"
                   className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                 />
               </div>

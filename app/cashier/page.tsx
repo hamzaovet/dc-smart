@@ -173,7 +173,7 @@ export default function CashierPage() {
       customerCity: orderType === "delivery" ? customerCity : "البوتيك الرئيسي",
       customerAddress: orderType === "delivery" ? customerAddress : "استلام مباشر من البوتيك",
       orderType,
-      cashierName: currentUser?.name || "كاشير ميني بيك",
+      cashierName: currentUser?.name || "كاشير دي سي سمارت",
       notes: notes.trim(),
       items: ticketItems.map((item) => ({
         nameAr: item.product.nameAr,
@@ -311,7 +311,7 @@ export default function CashierPage() {
               </div>
             ) : filteredProducts.length === 0 ? (
               <div className="py-20 text-center text-zinc-500 text-xs">
-                لا توجد عطور مطابقة للبحث
+                لا توجد أجهزة أو كاميرات مطابقة للبحث
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3.5 pb-4">
@@ -443,7 +443,7 @@ export default function CashierPage() {
             {ticketItems.length === 0 ? (
               <div className="py-14 text-center text-zinc-600 text-xs flex flex-col items-center gap-2">
                 <ShoppingCart size={32} className="stroke-1 text-zinc-700" />
-                <span>الفاتورة فارغة، اضغط على أي عطر لإضافته فوراً</span>
+                <span>الفاتورة فارغة، اضغط على أي صنف أو كاميرا لإضافتها فوراً</span>
               </div>
             ) : (
               ticketItems.map((item) => (

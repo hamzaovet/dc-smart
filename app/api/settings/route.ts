@@ -6,26 +6,32 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     let settings = await prisma.storeSettings.findUnique({
-      where: { id: "rovy_settings" },
+      where: { id: "dcsmart_settings" },
     });
+
+    if (!settings) {
+      settings = await prisma.storeSettings.findFirst();
+    }
 
     if (!settings) {
       settings = await prisma.storeSettings.create({
         data: {
-          id: "rovy_settings",
-          storeNameAr: "ميني بيك — للعطور الفاخرة",
-          storeNameEn: "Mini Pick — Luxury Fragrances",
-          whatsappPhone: "01503012856",
-          hotline: "01503012856",
-          secondaryPhone: "01556718249",
-          googleMapsUrl: "https://maps.app.goo.gl/z2QCHZzSuJaaNHPV7",
-          addressAr: "6 أكتوبر — الحي الرابع (شارع مجلس الدولة) — الجيزة",
-          addressEn: "6th of October — 4th District (Council of State St) — Giza",
-          workingHoursAr: "يومياً من 10 صباحاً وحتى 12 منتصف الليل",
-          workingHoursEn: "Daily from 10:00 AM to 12:00 Midnight",
-          instagramHandle: "rovystore2",
+          id: "dcsmart_settings",
+          storeNameAr: "دي سي سمارت — للأنظمة الأمنية والتحكم الذكي",
+          storeNameEn: "DC Smart — Smart Security & Technology Solutions",
+          whatsappPhone: "01281248731",
+          hotline: "01008657085",
+          secondaryPhone: "01007302685",
+          googleMapsUrl: "https://maps.google.com/?q=Tanta,Gharbia,Egypt",
+          addressAr: "طنطا — محافظة الغربية — جمهورية مصر العربية",
+          addressEn: "Tanta, Gharbia Governorate, Egypt",
+          workingHoursAr: "يومياً من 9:00 صباحاً حتى 11:00 مساءً",
+          workingHoursEn: "Daily from 9:00 AM to 11:00 PM",
+          instagramHandle: "dcsmart.cctv",
+          announcementAr: "🛡️ ضمان عامين شامل استبدال فوري لكافة كاميرات المراقبة وأجهزة التسجيل + معاينة وتركيب احترافي",
+          announcementEn: "🛡️ 2-Year Full Replacement Warranty on all CCTV Cameras & DVRs + Professional Installation",
           deliveryFee: 50.0,
-          freeShippingThreshold: 1500.0,
+          freeShippingThreshold: 5000.0,
         },
       });
     }
@@ -33,7 +39,7 @@ export async function GET() {
     return NextResponse.json({ settings });
   } catch (error: any) {
     return NextResponse.json(
-      { error: "فشل استرجاع إعدادات المتجر", details: error.message },
+      { error: "فشل استرجاع إعدادات المنظومة", details: error.message },
       { status: 500 }
     );
   }
@@ -64,11 +70,19 @@ export async function PATCH(req: Request) {
       updateData.freeShippingThreshold = Number(body.freeShippingThreshold);
     }
 
+    const current = await prisma.storeSettings.findFirst();
+    const targetId = current ? current.id : "dcsmart_settings";
+
     const settings = await prisma.storeSettings.upsert({
-      where: { id: "rovy_settings" },
+      where: { id: targetId },
       update: updateData,
       create: {
-        id: "rovy_settings",
+        id: targetId,
+        storeNameAr: "دي سي سمارت — للأنظمة الأمنية والتحكم الذكي",
+        storeNameEn: "DC Smart — Smart Security & Technology Solutions",
+        whatsappPhone: "01281248731",
+        hotline: "01008657085",
+        secondaryPhone: "01007302685",
         ...updateData,
       },
     });
@@ -76,7 +90,7 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ success: true, settings });
   } catch (error: any) {
     return NextResponse.json(
-      { error: "فشل حفظ إعدادات المتجر", details: error.message },
+      { error: "فشل حفظ إعدادات المنظومة", details: error.message },
       { status: 500 }
     );
   }

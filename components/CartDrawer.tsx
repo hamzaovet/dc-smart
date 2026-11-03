@@ -44,7 +44,7 @@ export default function CartDrawer() {
   const whatsappNumber = cleanPhone.startsWith("0") ? `2${cleanPhone}` : cleanPhone;
 
   const whatsappCartText = encodeURIComponent(
-    `مساء الخير، أود طلب المنتجات التالية من ميني بيك (Mini Pick):\n` +
+    `مساء الخير، أود طلب المنظومات والمنتجات التالية من دي سي سمارت (DC Smart):\n` +
       items
         .map(
           (i, idx) =>

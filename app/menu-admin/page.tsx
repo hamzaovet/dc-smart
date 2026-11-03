@@ -90,13 +90,13 @@ export default function MenuAdminPage() {
   // Product Form State
   const [formNameAr, setFormNameAr] = useState("");
   const [formNameEn, setFormNameEn] = useState("");
-  const [formBrandAr, setFormBrandAr] = useState("ميني بيك | Mini Pick");
-  const [formBrandEn, setFormBrandEn] = useState("Mini Pick Studio");
+  const [formBrandAr, setFormBrandAr] = useState("داهوا | Dahua Security");
+  const [formBrandEn, setFormBrandEn] = useState("Dahua Security");
   const [formCategoryId, setFormCategoryId] = useState("");
   const [formPrice, setFormPrice] = useState("1200");
   const [formOriginalPrice, setFormOriginalPrice] = useState("1500");
   const [formVolume, setFormVolume] = useState("100 ml");
-  const [formConcentration, setFormConcentration] = useState("Eau de Parfum");
+  const [formConcentration, setFormConcentration] = useState("خارجي Outdoor IP67");
   const [formType, setFormType] = useState("ORIGINAL");
   const [formStockQty, setFormStockQty] = useState("50");
   const [formIsWinter, setFormIsWinter] = useState(false);
@@ -107,8 +107,8 @@ export default function MenuAdminPage() {
   const [formHeartNotesEn, setFormHeartNotesEn] = useState("Safe high-precision easy assembly materials");
   const [formBaseNotesAr, setFormBaseNotesAr] = useState("تحفة ديكورية أنيقة تزين غرفتك ومكتبك");
   const [formBaseNotesEn, setFormBaseNotesEn] = useState("Cute aesthetic decor piece for your space");
-  const [formDescAr, setFormDescAr] = useState("منتج أصلي مميز بتصميم كيوت وخامات عالية الدقة من ميني بيك.");
-  const [formDescEn, setFormDescEn] = useState("Authentic cute aesthetic product from Mini Pick.");
+  const [formDescAr, setFormDescAr] = useState("منتج أصلي معتمد بمواصفات عالية الجودة وضمان عامين من دي سي سمارت.");
+  const [formDescEn, setFormDescEn] = useState("Authentic certified security equipment from DC Smart.");
   const [formImage, setFormImage] = useState("https://i.ibb.co/vzG70GZ/nano-stitch.jpg");
 
   // Category Modal State
@@ -157,13 +157,13 @@ export default function MenuAdminPage() {
     setEditingProduct(null);
     setFormNameAr("");
     setFormNameEn("");
-    setFormBrandAr("ميني بيك | Mini Pick");
-    setFormBrandEn("Mini Pick Studio");
+    setFormBrandAr("داهوا | Dahua Security");
+    setFormBrandEn("Dahua Security");
     setFormCategoryId(categories[0]?.id || "");
     setFormPrice("1250");
     setFormOriginalPrice("1600");
     setFormVolume("100 ml");
-    setFormConcentration("Eau de Parfum");
+    setFormConcentration("خارجي Outdoor IP67");
     setFormType("ORIGINAL");
     setFormStockQty("50");
     setFormIsWinter(false);
@@ -174,8 +174,8 @@ export default function MenuAdminPage() {
     setFormHeartNotesEn("Safe high-precision easy assembly materials");
     setFormBaseNotesAr("تحفة ديكورية أنيقة تزين غرفتك ومكتبك");
     setFormBaseNotesEn("Cute aesthetic decor piece for your space");
-    setFormDescAr("منتج أصلي مميز بتصميم كيوت وخامات عالية الدقة من ميني بيك.");
-    setFormDescEn("Authentic cute aesthetic product from Mini Pick.");
+    setFormDescAr("منتج أصلي معتمد بمواصفات عالية الجودة وضمان عامين من دي سي سمارت.");
+    setFormDescEn("Authentic certified security equipment from DC Smart.");
     setFormImage("https://i.ibb.co/vzG70GZ/nano-stitch.jpg");
     setIsModalOpen(true);
   };
@@ -253,7 +253,7 @@ export default function MenuAdminPage() {
           setIsModalOpen(false);
           fetchData();
         } else {
-          alert(data.error || "فشل تعديل العطر");
+          alert(data.error || "فشل تعديل بيانات الصنف");
         }
       } else {
         const res = await fetch("/api/products", {
@@ -267,12 +267,12 @@ export default function MenuAdminPage() {
           setIsModalOpen(false);
           fetchData();
         } else {
-          alert(data.error || "فشل إضافة العطر");
+          alert(data.error || "فشل إضافة الصنف للكتالوج");
         }
       }
     } catch (err) {
       console.error("Save error:", err);
-      alert("حدث خطأ أثناء حفظ بيانات العطر");
+      alert("حدث خطأ أثناء حفظ بيانات الصنف");
     } finally {
       setSaving(false);
     }
@@ -300,7 +300,7 @@ export default function MenuAdminPage() {
   };
 
   const handleDeleteProduct = async (id: string) => {
-    if (!confirm("هل أنت متأكد من حذف هذا العطر من الكتالوج؟")) return;
+    if (!confirm("هل أنت متأكد من حذف هذا الصنف من الكتالوج؟")) return;
     playSound("click");
 
     setProducts((prev) => prev.filter((p) => p.id !== id));
@@ -438,9 +438,9 @@ export default function MenuAdminPage() {
     <ErpLayout activeItem="menu">
       <div className="space-y-6">
         {/* Top Header & Tab Switcher */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-zinc-900/80 border border-pink-500/20 p-5 rounded-2xl shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-zinc-900/80 border border-cyan-500/20 p-5 rounded-2xl shadow-xl">
           <div className="flex items-center gap-3">
-            <span className="p-2.5 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-400">
+            <span className="p-2.5 rounded-xl bg-pink-500/10 border border-cyan-500/30 text-pink-400">
               <Layers size={22} />
             </span>
             <div>
@@ -529,7 +529,7 @@ export default function MenuAdminPage() {
                   placeholder="ابحث باسم المنتج، البراند، أو المكونات..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pr-10 pl-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-pink-500"
+                  className="w-full pr-10 pl-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
@@ -537,7 +537,7 @@ export default function MenuAdminPage() {
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-zinc-300 focus:outline-none focus:border-pink-500"
+                className="w-full px-3 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-xs text-zinc-300 focus:outline-none focus:border-cyan-500"
               >
                 <option value="الكل">كل الأقسام</option>
                 {categories.map((c) => (
@@ -558,34 +558,34 @@ export default function MenuAdminPage() {
                     }}
                     className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
                       filterType === t
-                        ? "bg-pink-500/20 text-pink-300 border border-pink-500/40"
+                        ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
                         : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800"
                     }`}
                   >
                     {t === "الكل"
-                      ? "كافة الأنواع"
+                      ? "كافة المنظومات"
                       : t === "ORIGINAL"
-                      ? "أصلي"
+                      ? "كاميرات مراقبة"
                       : t === "TESTER"
-                      ? "تيستر"
+                      ? "أجهزة تسجيل"
                       : t === "HIGH_COPY"
-                      ? "ماستر كوبي"
-                      : "بدائل نيش"}
+                      ? "كابلات وتخزين"
+                      : "باور وملحقات"}
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Products Table */}
-            <div className="bg-[#0c0914] border border-pink-500/20 rounded-2xl overflow-hidden shadow-2xl">
+            <div className="bg-[#0c0914] border border-cyan-500/20 rounded-2xl overflow-hidden shadow-2xl">
               <div className="overflow-x-auto">
                 <table className="w-full text-right text-xs">
                   <thead className="bg-zinc-950/80 text-zinc-400 uppercase tracking-wider border-b border-zinc-800">
                     <tr>
-                      <th className="py-3 px-4 font-serif">العطر</th>
+                      <th className="py-3 px-4 font-serif">الصنف / الجهاز</th>
                       <th className="py-3 px-4 font-serif">القسم</th>
                       <th className="py-3 px-4 font-serif">البراند والنوع</th>
-                      <th className="py-3 px-4 font-serif">الحجم / التركيز</th>
+                      <th className="py-3 px-4 font-serif">المواصفة والبيئة</th>
                       <th className="py-3 px-4 font-serif">السعر</th>
                       <th className="py-3 px-4 font-serif">المخزون</th>
                       <th className="py-3 px-4 font-serif">الحالة</th>
@@ -600,7 +600,7 @@ export default function MenuAdminPage() {
                           {/* Fragrance Name & Img */}
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-12 h-12 rounded-xl bg-zinc-950 border border-pink-500/20 overflow-hidden flex-shrink-0 relative">
+                              <div className="w-12 h-12 rounded-xl bg-zinc-950 border border-cyan-500/20 overflow-hidden flex-shrink-0 relative">
                                 <img
                                   src={product.image}
                                   alt={product.nameAr}
@@ -616,7 +616,7 @@ export default function MenuAdminPage() {
                                     </span>
                                   )}
                                   {product.isFeatured && (
-                                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-pink-500/20 text-pink-300 border border-pink-500/30">
+                                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                                       ⭐ مميز
                                     </span>
                                   )}
@@ -639,19 +639,19 @@ export default function MenuAdminPage() {
                             <span
                               className={`inline-block mt-1 text-[9.5px] px-2 py-0.5 rounded-md font-bold ${
                                 product.type === "ORIGINAL"
-                                  ? "bg-pink-500/20 text-pink-300 border border-pink-500/30"
+                                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
                                   : product.type === "TESTER"
                                   ? "bg-purple-500/20 text-purple-300 border border-purple-500/30"
                                   : "bg-blue-500/20 text-blue-300 border border-blue-500/30"
                               }`}
                             >
                               {product.type === "ORIGINAL"
-                                ? "أصلي 100%"
+                                ? "كاميرات مراقبة"
                                 : product.type === "TESTER"
-                                ? "تستر أصلي"
+                                ? "أجهزة تسجيل"
                                 : product.type === "HIGH_COPY"
-                                ? "ماستر كوبي"
-                                : "بديل مستوحى"}
+                                ? "كابلات وتخزين"
+                                : "باور وملحقات"}
                             </span>
                           </td>
 
@@ -698,14 +698,14 @@ export default function MenuAdminPage() {
                               <button
                                 onClick={() => handleOpenEdit(product)}
                                 className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-pink-400 transition"
-                                title="تعديل العطر"
+                                title="تعديل الصنف"
                               >
                                 <Edit3 size={14} />
                               </button>
                               <button
                                 onClick={() => handleDeleteProduct(product.id)}
                                 className="p-1.5 rounded-lg bg-zinc-800 hover:bg-red-900/50 text-red-400 transition"
-                                title="حذف العطر"
+                                title="حذف الصنف"
                               >
                                 <Trash2 size={14} />
                               </button>
@@ -728,16 +728,16 @@ export default function MenuAdminPage() {
               {categories.map((cat) => (
                 <div
                   key={cat.id}
-                  className="bg-[#0c0914] border border-pink-500/20 rounded-2xl p-5 shadow-xl relative flex flex-col justify-between hover:border-pink-500/40 transition"
+                  className="bg-[#0c0914] border border-cyan-500/20 rounded-2xl p-5 shadow-xl relative flex flex-col justify-between hover:border-cyan-500/40 transition"
                 >
                   <div>
                     <div className="flex items-start justify-between gap-3 mb-3">
-                      <div className="w-12 h-12 rounded-xl bg-pink-500/10 border border-pink-500/30 flex items-center justify-center text-2xl">
+                      <div className="w-12 h-12 rounded-xl bg-pink-500/10 border border-cyan-500/30 flex items-center justify-center text-2xl">
                         {cat.icon || "✨"}
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span className="px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-[11px] font-mono font-bold text-pink-300">
-                          {cat._count?.products || 0} عطور
+                          {cat._count?.products || 0} صنف
                         </span>
                       </div>
                     </div>
@@ -747,7 +747,7 @@ export default function MenuAdminPage() {
                     </h3>
                     <p className="text-xs text-pink-500/80 font-sans mt-0.5">{cat.nameEn}</p>
                     <p className="text-xs text-zinc-400 line-clamp-2 mt-2 leading-relaxed">
-                      {cat.descriptionAr || "قسم مميز ضمن تشكيلات ميني بيك للعطور الفاخرة."}
+                      {cat.descriptionAr || "قسم معتمد ضمن منظومات وتجهيزات دي سي سمارت الأمنية."}
                     </p>
                   </div>
 
@@ -782,11 +782,11 @@ export default function MenuAdminPage() {
       {/* Add / Edit Perfume Modal with ImgBB Uploader */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-2xl bg-[#120e1c] border border-pink-500/30 rounded-2xl p-6 shadow-2xl relative my-8">
+          <div className="w-full max-w-2xl bg-[#120e1c] border border-cyan-500/30 rounded-2xl p-6 shadow-2xl relative my-8">
             <div className="flex items-center justify-between pb-3 border-b border-zinc-800 mb-4">
-              <h3 className="text-base font-bold text-pink-300 font-serif flex items-center gap-2">
+              <h3 className="text-base font-bold text-cyan-300 font-serif flex items-center gap-2">
                 <Layers size={18} />
-                <span>{editingProduct ? "تعديل بيانات المنتج" : "إضافة عطر فاخر جديد للكتالوج"}</span>
+                <span>{editingProduct ? "تعديل بيانات الصنف" : "إضافة كاميرا / جهاز جديد للكتالوج"}</span>
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -806,7 +806,7 @@ export default function MenuAdminPage() {
                     required
                     value={formNameAr}
                     onChange={(e) => setFormNameAr(e.target.value)}
-                    placeholder="مثال: عطر عنبر الصحراء الملكي"
+                    placeholder="مثال: كاميرا داهوا خارجي 2 ميجا Full Color ومايك"
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                   />
                 </div>
@@ -816,7 +816,7 @@ export default function MenuAdminPage() {
                     type="text"
                     value={formNameEn}
                     onChange={(e) => setFormNameEn(e.target.value)}
-                    placeholder="e.g. Royal Desert Amber"
+                    placeholder="e.g. Dahua 2MP Full-Color Bullet Camera"
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                   />
                 </div>
@@ -825,11 +825,11 @@ export default function MenuAdminPage() {
               {/* Category & Brand */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-zinc-300 font-medium mb-1">قسم العطر (Category) *</label>
+                  <label className="block text-zinc-300 font-medium mb-1">قسم الصنف / المنظومة (Category) *</label>
                   <select
                     value={formCategoryId}
                     onChange={(e) => setFormCategoryId(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-medium focus:border-pink-500"
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-medium focus:border-cyan-500"
                   >
                     {categories.map((c) => (
                       <option key={c.id} value={c.id}>
@@ -840,12 +840,12 @@ export default function MenuAdminPage() {
                 </div>
 
                 <div>
-                  <label className="block text-zinc-300 font-medium mb-1">دار المنتج / البراند</label>
+                  <label className="block text-zinc-300 font-medium mb-1">الماركة / الشركة المصنعة (Brand)</label>
                   <input
                     type="text"
                     value={formBrandAr}
                     onChange={(e) => setFormBrandAr(e.target.value)}
-                    placeholder="ميني بيك | Mini Pick / Nano Blocks / Bedazzle / Sanrio"
+                    placeholder="داهوا Dahua / هيكفيجن Hikvision / يوني آرك Uniarch / سيجيت Seagate / دي سي سمارت"
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                   />
                 </div>
@@ -886,42 +886,51 @@ export default function MenuAdminPage() {
               {/* Type, Volume & Concentration */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-zinc-300 font-medium mb-1">درجة الأصالة / النوع:</label>
+                  <label className="block text-zinc-300 font-medium mb-1">نوع التجهيز والمنظومة:</label>
                   <select
                     value={formType}
                     onChange={(e) => setFormType(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                   >
-                    <option value="ORIGINAL">أصلي 100% (Original)</option>
-                    <option value="TESTER">تيستر أصلي (Original Tester)</option>
-                    <option value="HIGH_COPY">ماستر كوبي (Master Mirror)</option>
-                    <option value="INSPIRED">بديل مستوحى ملكي (Inspired Niche)</option>
+                    <option value="ORIGINAL">كاميرات مراقبة (CCTV Cameras)</option>
+                    <option value="TESTER">أجهزة تسجيل (XVR / NVR Recorders)</option>
+                    <option value="HIGH_COPY">كابلات وتخزين (Cables & Storage)</option>
+                    <option value="INSPIRED">باور وملحقات تجميع (Power & Racks)</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-zinc-300 font-medium mb-1">الحجم:</label>
+                  <label className="block text-zinc-300 font-medium mb-1">المواصفة / الدقة (Specs):</label>
                   <select
                     value={formVolume}
                     onChange={(e) => setFormVolume(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                   >
-                    <option value="100 ml">100 ml</option>
-                    <option value="50 ml">50 ml</option>
-                    <option value="200 ml">200 ml</option>
-                    <option value="30 ml">30 ml (عينة)</option>
+                    <option value="2MP Full Color">2MP Full Color (ألوان ليلية)</option>
+                    <option value="5MP Ultra HD">5MP Ultra HD</option>
+                    <option value="8MP 4K">8MP 4K فائقة الدقة</option>
+                    <option value="4 Channels">4 قنوات (4CH)</option>
+                    <option value="8 Channels">8 قنوات (8CH)</option>
+                    <option value="16 Channels">16 قناة (16CH)</option>
+                    <option value="1TB Surveillance">1 تيرا هارد تسجيل</option>
+                    <option value="2TB Surveillance">2 تيرا هارد تسجيل</option>
+                    <option value="305m Roll">لفة سلك 305 متر</option>
+                    <option value="10A 12V">باور سبلاي 10 أمبير</option>
+                    <option value="Standard">قياسي / عام</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-zinc-300 font-medium mb-1">التركيز:</label>
+                  <label className="block text-zinc-300 font-medium mb-1">بيئة التشغيل / نوع التوصيل:</label>
                   <select
                     value={formConcentration}
                     onChange={(e) => setFormConcentration(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                   >
-                    <option value="Eau de Parfum">Eau de Parfum</option>
-                    <option value="Extrait de Parfum">Extrait de Parfum</option>
-                    <option value="Eau de Toilette">Eau de Toilette</option>
-                    <option value="Pure Oil Blend">Pure Oil Blend (زيت نقي)</option>
+                    <option value="خارجي Outdoor IP67">خارجي معدني مقاوم للعوامل الجوية (IP67)</option>
+                    <option value="داخلي Indoor">داخلي مدمج بمايك (Indoor Dome)</option>
+                    <option value="متحركة PTZ Wi-Fi">متحركة PTZ لاسلكية واي فاي</option>
+                    <option value="شبكي IP PoE">شبكي ذكي IP PoE</option>
+                    <option value="تناظري HD">تناظري محوري HD Coaxial</option>
+                    <option value="توصيل وتغذية">توصيل وتغذية</option>
                   </select>
                 </div>
               </div>
@@ -935,7 +944,7 @@ export default function MenuAdminPage() {
                     onChange={(e) => setFormIsWinter(e.target.checked)}
                     className="accent-amber-500 rounded"
                   />
-                  <span>ضمن تشكيلة الشتاء الفاخرة (Winter 1) ❄️</span>
+                  <span>الأكثر طلباً في عروض التركيب والأنظمة 🛡️</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer text-zinc-300">
                   <input
@@ -944,17 +953,17 @@ export default function MenuAdminPage() {
                     onChange={(e) => setFormIsFeatured(e.target.checked)}
                     className="accent-amber-500 rounded"
                   />
-                  <span>عطر مميز يظهر في الصفحة الرئيسية ⭐</span>
+                  <span>صنف مميز يظهر في واجهة المنظومة والكتالوج ⭐</span>
                 </label>
               </div>
 
               {/* Image Upload Zone (ImgBB) */}
-              <div className="p-4 rounded-xl bg-zinc-950/80 border border-pink-500/20">
+              <div className="p-4 rounded-xl bg-zinc-950/80 border border-cyan-500/20">
                 <ImageUploader
                   value={formImage}
                   onChange={setFormImage}
-                  label="صورة العطر الرسمية (رفع مباشر عبر ImgBB)"
-                  helperText="اختر صورة العطر من جهازك وسيتم رفعها تلقائياً إلى ImgBB واستخراج الرابط الدائم"
+                  label="صورة المنتج / الكاميرا الرسمية (رفع مباشر عبر ImgBB)"
+                  helperText="اختر صورة الكاميرا أو المنتج من جهازك وسيتم رفعها واستخراج الرابط الدائم"
                 />
               </div>
 
@@ -972,7 +981,7 @@ export default function MenuAdminPage() {
                   disabled={saving}
                   className="px-6 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 text-black font-bold transition disabled:opacity-50"
                 >
-                  {saving ? "جاري الحفظ..." : editingProduct ? "تعديل العطر" : "إضافة العطر للكتالوج"}
+                  {saving ? "جاري الحفظ..." : editingProduct ? "تعديل بيانات الصنف" : "إضافة الصنف للكتالوج"}
                 </button>
               </div>
             </form>
@@ -983,9 +992,9 @@ export default function MenuAdminPage() {
       {/* Add / Edit Category Modal */}
       {isCatModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-lg bg-[#120e1c] border border-pink-500/30 rounded-2xl p-6 shadow-2xl relative my-8">
+          <div className="w-full max-w-lg bg-[#120e1c] border border-cyan-500/30 rounded-2xl p-6 shadow-2xl relative my-8">
             <div className="flex items-center justify-between pb-3 border-b border-zinc-800 mb-4">
-              <h3 className="text-base font-bold text-pink-300 font-serif flex items-center gap-2">
+              <h3 className="text-base font-bold text-cyan-300 font-serif flex items-center gap-2">
                 <FolderTree size={18} />
                 <span>{editingCategory ? "تعديل بيانات القسم" : "إضافة قسم جديد لمتجر روفي"}</span>
               </h3>
@@ -1006,7 +1015,7 @@ export default function MenuAdminPage() {
                     required
                     value={catNameAr}
                     onChange={(e) => setCatNameAr(e.target.value)}
-                    placeholder="مثال: عطور الشتاء الملكية"
+                    placeholder="مثال: كاميرات مراقبة داهوا Full Color"
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                   />
                 </div>
@@ -1062,7 +1071,7 @@ export default function MenuAdminPage() {
                   rows={2}
                   value={catDescAr}
                   onChange={(e) => setCatDescAr(e.target.value)}
-                  placeholder="وصف مختصر لمجموعة العطور المندرجة تحت هذا القسم..."
+                  placeholder="وصف فني للأجهزة والمنظومات المندرجة تحت هذا القسم..."
                   className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                 />
               </div>

@@ -17,12 +17,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   if (!product) {
     return {
-      title: "منتج غير موجود | ميني بيك",
+      title: "صنف غير موجود | دي سي سمارت",
     };
   }
 
   return {
-    title: `${product.nameAr} (${product.brandAr}) | ميني بيك`,
+    title: `${product.nameAr} (${product.brandAr}) | دي سي سمارت`,
     description: product.descriptionAr.slice(0, 160),
     openGraph: {
       title: `${product.nameAr} - ${product.brandAr}`,

@@ -60,7 +60,7 @@ export default function SalesReturnsPage() {
   const [returnQty, setReturnQty] = useState("1");
   const [refundAmount, setRefundAmount] = useState("");
   const [refundMethod, setRefundMethod] = useState("CASH");
-  const [reason, setReason] = useState("عيب في البخاخ أو العبوة");
+  const [reason, setReason] = useState("عطل فني في الكاميرا أو جهاز التسجيل");
   const [restockItems, setRestockItems] = useState(true);
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
@@ -114,7 +114,7 @@ export default function SalesReturnsPage() {
     const returnItems = [
       {
         productId: prod?.id || null,
-        nameAr: prod?.nameAr || "عطر مرتجع",
+        nameAr: prod?.nameAr || "صنف / جهاز مرتجع",
         quantity: Number(returnQty) || 1,
         refundPrice: Number(refundAmount),
       },
@@ -428,7 +428,7 @@ export default function SalesReturnsPage() {
                     onChange={(e) => handleProductChange(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                   >
-                    <option value="">-- اختر العطر من القائمة --</option>
+                    <option value="">-- اختر الصنف / الكاميرا من القائمة --</option>
                     {products.map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.nameAr} ({p.price} ج.م)
@@ -480,10 +480,10 @@ export default function SalesReturnsPage() {
                   onChange={(e) => setReason(e.target.value)}
                   className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                 >
-                  <option value="عيب في البخاخ أو العبوة">عيب في البخاخ أو العبوة</option>
+                  <option value="عطل فني في الكاميرا أو جهاز التسجيل">عطل فني في الكاميرا أو جهاز التسجيل</option>
                   <option value="عدم صعوبة التركيب الرائحة أو ملاحظات جودة">عدم صعوبة التركيب الرائحة أو ملاحظات جودة</option>
                   <option value="خطأ في إرسال صنف مختلف">خطأ في إرسال صنف مختلف</option>
-                  <option value="طلب استبدال بعطر آخر">طلب استبدال بعطر آخر</option>
+                  <option value="طلب استبدال بموديل أو دقة أعلى">طلب استبدال بموديل أو دقة أعلى (ترقية المنظومة)</option>
                   <option value="إلغاء الطلب عند الاستلام">إلغاء الطلب عند الاستلام</option>
                 </select>
               </div>

@@ -224,17 +224,17 @@ export default function OffersAdminPage() {
   });
 
   const getProductNames = (rawIds?: string | null) => {
-    if (!rawIds || rawIds === "ALL") return "كافة العطور في المتجر";
+    if (!rawIds || rawIds === "ALL") return "كافة الأصناف في الكتالوج";
     try {
       const parsed: string[] = JSON.parse(rawIds);
       if (!Array.isArray(parsed) || parsed.length === 0)
-        return "كافة العطور في المتجر";
+        return "كافة الأصناف في الكتالوج";
       const names = parsed
         .map((id) => products.find((p) => p.id === id)?.nameAr)
         .filter(Boolean);
-      return names.length > 0 ? names.join("، ") : "عطور محددة";
+      return names.length > 0 ? names.join("، ") : "أصناف محددة";
     } catch {
-      return "عطور محددة";
+      return "أصناف محددة";
     }
   };
 
@@ -396,7 +396,7 @@ export default function OffersAdminPage() {
               لا توجد عروض تطابق البحث
             </h3>
             <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
-              قم بإنشاء عرض ترويجي جديد مثل خصومات الشتاء، أو اشتري عطر واحصل
+              قم بإنشاء عرض ترويجي جديد مثل عروض بكجات 4 كاميرات كاملة بالتركيب، أو خصومات أجهزة التسجيل
               على عينة مجانية
             </p>
             <button
@@ -579,7 +579,7 @@ export default function OffersAdminPage() {
                       <option value="PERCENTAGE">نسبة مئوية (%)</option>
                       <option value="FIXED">خصم نقدي ثابت (ج.م)</option>
                       <option value="BOGO">قطعة عليها قطعة مجاناً (1+1)</option>
-                      <option value="BUNDLE">باقة عطور مجمعة (Bundle)</option>
+                      <option value="BUNDLE">باقة منظومة مراقبة متكاملة (CCTV Bundle System)</option>
                     </select>
                   </div>
 
@@ -647,7 +647,7 @@ export default function OffersAdminPage() {
                         onChange={() => setTargetScope("ALL")}
                         className="accent-amber-500"
                       />
-                      كافة العطور في المتجر
+                      كافة الأصناف في الكتالوج
                     </label>
                     <label className="flex items-center gap-2 text-xs text-zinc-300 cursor-pointer">
                       <input
@@ -657,7 +657,7 @@ export default function OffersAdminPage() {
                         onChange={() => setTargetScope("CUSTOM")}
                         className="accent-amber-500"
                       />
-                      عطور محددة فقط
+                      أصناف محددة فقط
                     </label>
                   </div>
 

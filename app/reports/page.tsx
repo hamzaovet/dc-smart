@@ -412,7 +412,7 @@ export default function ReportsFinancePage() {
                   >
                     <option value="تغليف وبوكسات">تغليف وبوكسات</option>
                     <option value="شحن وتوصيل">شحن وتوصيل</option>
-                    <option value="خامات وزيوت">خامات وزيوت عطرية</option>
+                    <option value="خامات وزيوت">مستلزمات ومهمات تركيب</option>
                     <option value="إعلانات وتسويق">إعلانات وتسويق</option>
                     <option value="تشغيل ومصروفات">تشغيل ومصروفات عامة</option>
                   </select>
