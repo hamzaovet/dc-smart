@@ -25,8 +25,19 @@ import {
   RefreshCw,
   Eye,
   FileCheck,
+  Download,
+  Image as ImageIcon,
+  Copy,
+  Edit3,
+  Save,
+  Check,
+  Sparkles,
+  AlertCircle,
+  X,
 } from "lucide-react";
 import Link from "next/link";
+import { toPng, toBlob } from "html-to-image";
+import { jsPDF } from "jspdf";
 
 interface QuoteItem {
   id: string;
@@ -36,6 +47,9 @@ interface QuoteItem {
   quantity: number;
   unitPrice: number;
   total: number;
+  isCustom?: boolean;
+  savedToCatalog?: boolean;
+  code?: string;
 }
 
 interface Quote {
@@ -73,13 +87,27 @@ interface DbProduct {
   } | null;
 }
 
+interface Category {
+  id: string;
+  nameAr: string;
+  nameEn?: string;
+}
+
 export default function QuotesPage() {
   const [activeTab, setActiveTab] = useState<"builder" | "history">("builder");
   const [loading, setLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportMessage, setExportMessage] = useState<string | null>(null);
+
   const [quotesList, setQuotesList] = useState<Quote[]>([]);
   const [dbProducts, setDbProducts] = useState<DbProduct[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [productSearch, setProductSearch] = useState("");
   const [showProductDropdown, setShowProductDropdown] = useState(false);
+
+  // Edit Mode State
+  const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
+  const [editingQuoteNumber, setEditingQuoteNumber] = useState<string | null>(null);
 
   // Quote Builder State
   const [clientName, setClientName] = useState("");
@@ -99,11 +127,24 @@ export default function QuotesPage() {
   );
   const [notes, setNotes] = useState("");
   const [validDays, setValidDays] = useState<number>(15);
+  const [autoSaveNewItems, setAutoSaveNewItems] = useState(true);
 
-  // Preview & Print Modal
+  // Save to Catalog Modal State
+  const [catalogModalItem, setCatalogModalItem] = useState<{
+    index: number;
+    name: string;
+    brand: string;
+    categoryId: string;
+    price: number;
+    specs: string;
+  } | null>(null);
+  const [catalogModalLoading, setCatalogModalLoading] = useState(false);
+
+  // Preview & Export Modal
   const [previewQuote, setPreviewQuote] = useState<Quote | null>(null);
   const [previewItems, setPreviewItems] = useState<QuoteItem[]>([]);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewTheme, setPreviewTheme] = useState<"dark" | "light">("dark");
 
   // History Filter
   const [filterSearch, setFilterSearch] = useState("");
@@ -113,6 +154,7 @@ export default function QuotesPage() {
 
   useEffect(() => {
     fetchProducts();
+    fetchCategories();
     fetchQuotes();
   }, []);
 
@@ -125,6 +167,18 @@ export default function QuotesPage() {
       }
     } catch (err) {
       console.error("Failed to load products:", err);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch("/api/categories");
+      const data = await res.json();
+      if (data.categories) {
+        setCategories(data.categories);
+      }
+    } catch (err) {
+      console.error("Failed to load categories:", err);
     }
   };
 
@@ -161,6 +215,8 @@ export default function QuotesPage() {
         quantity: 1,
         unitPrice: p.price,
         total: p.price,
+        isCustom: false,
+        savedToCatalog: true,
       };
       setItems([...items, newItem]);
     }
@@ -171,12 +227,14 @@ export default function QuotesPage() {
   const addCustomItem = () => {
     const newItem: QuoteItem = {
       id: "custom_" + Date.now(),
-      name: "بند مخصص (مواسير وترنك / إكسسوارات تركيب)",
-      specs: "حسب متطلبات الموقع",
-      category: "خدمات ومهمات",
+      name: "بند مخصص جديد (مواسير / كابلات / هارد / راك...)",
+      specs: "حسب المقايسة والموقع",
+      category: "مستلزمات ومهمات",
       quantity: 1,
       unitPrice: 200,
       total: 200,
+      isCustom: true,
+      savedToCatalog: false,
     };
     setItems([...items, newItem]);
   };
@@ -213,12 +271,127 @@ export default function QuotesPage() {
     setItems(items.filter((_, i) => i !== index));
   };
 
+  // Open Save to Catalog Modal
+  const handleOpenCatalogModal = (index: number) => {
+    const it = items[index];
+    setCatalogModalItem({
+      index,
+      name: it.name,
+      brand: it.specs?.includes("داهوا")
+        ? "داهوا Dahua"
+        : it.specs?.includes("هاي لوك") || it.specs?.includes("هيكفيجن")
+        ? "هاي لوك HiLook"
+        : it.specs?.includes("يوني آرك")
+        ? "يوني آرك Uniarch"
+        : "دي سي سمارت",
+      categoryId: categories[0]?.id || "cat_accessories",
+      price: it.unitPrice,
+      specs: it.specs || "مهمات تركيب ومعدات أمنية معتمدة",
+    });
+  };
+
+  // Save Item to Catalog in Database
+  const handleSaveItemToCatalog = async () => {
+    if (!catalogModalItem) return;
+    if (!catalogModalItem.name.trim() || catalogModalItem.price <= 0) {
+      alert("يرجى إدخال اسم الصنف وسعر الوحدة بشكل صحيح");
+      return;
+    }
+
+    try {
+      setCatalogModalLoading(true);
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nameAr: catalogModalItem.name.trim(),
+          nameEn: catalogModalItem.name.trim(),
+          brandAr: catalogModalItem.brand,
+          brandEn: catalogModalItem.brand,
+          categoryId: catalogModalItem.categoryId,
+          price: catalogModalItem.price,
+          descriptionAr: catalogModalItem.specs,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "فشل تسجيل الصنف في الكتالوج");
+      }
+
+      // Update the item in the quote builder
+      const updated = [...items];
+      updated[catalogModalItem.index].id = data.product.id;
+      updated[catalogModalItem.index].name = data.product.nameAr;
+      updated[catalogModalItem.index].isCustom = false;
+      updated[catalogModalItem.index].savedToCatalog = true;
+      updated[catalogModalItem.index].code = data.code || `DCS-${data.product.id.slice(-4)}`;
+      setItems(updated);
+
+      // Add to dbProducts list
+      setDbProducts((prev) => [data.product, ...prev]);
+
+      alert(
+        `✅ تم تسجيل الصنف في الكتالوج بنجاح!\n\nالكود المولد: ${
+          data.code || "DCS-" + data.product.id.slice(-4)
+        }\nالاسم: ${data.product.nameAr}`
+      );
+      setCatalogModalItem(null);
+    } catch (err: any) {
+      alert(err.message || "حدث خطأ أثناء حفظ الصنف");
+    } finally {
+      setCatalogModalLoading(false);
+    }
+  };
+
   // Calculations
   const subtotal = items.reduce((sum, it) => sum + it.total, 0);
   const taxAmount = (subtotal + installationFee - discount) * (taxPercent / 100);
   const totalAmount = Math.max(0, subtotal + installationFee - discount + taxAmount);
 
-  // Save Quote
+  // Start Editing an Existing Quote
+  const handleStartEdit = (quote: Quote) => {
+    setEditingQuoteId(quote.id);
+    setEditingQuoteNumber(quote.quoteNumber);
+    setClientName(quote.clientName);
+    setClientPhone(quote.clientPhone);
+    setClientAddress(quote.clientAddress || "");
+    setClientCompany(quote.clientCompany || "");
+    setProjectType(quote.projectType);
+    setInstallationFee(quote.installationFee);
+    setDiscount(quote.discount);
+
+    // Calc tax percent
+    const taxableBase = quote.subtotal + quote.installationFee - quote.discount;
+    if (quote.tax > 0 && taxableBase > 0) {
+      setTaxPercent(Math.round((quote.tax / taxableBase) * 100));
+    } else {
+      setTaxPercent(0);
+    }
+
+    setWarrantyPeriod(quote.warrantyPeriod);
+    setTerms(quote.terms || "");
+    setNotes(quote.notes || "");
+
+    try {
+      const parsed = JSON.parse(quote.items);
+      setItems(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      setItems([]);
+    }
+
+    setIsPreviewOpen(false);
+    setActiveTab("builder");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingQuoteId(null);
+    setEditingQuoteNumber(null);
+    resetForm();
+  };
+
+  // Save / Update Quote
   const handleSaveQuote = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientName.trim() || !clientPhone.trim()) {
@@ -232,40 +405,90 @@ export default function QuotesPage() {
 
     try {
       setLoading(true);
-      const res = await fetch("/api/quotes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clientName,
-          clientPhone,
-          clientAddress,
-          clientCompany,
-          projectType,
-          items,
-          subtotal,
-          installationFee,
-          discount,
-          tax: taxAmount,
-          totalAmount,
-          warrantyPeriod,
-          terms,
-          validUntil: new Date(Date.now() + validDays * 24 * 60 * 60 * 1000).toISOString(),
-          notes,
-          createdBy: "مهندس المبيعات / إدارة دي سي سمارت",
-        }),
-      });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "فشل حفظ عرض السعر");
+      // Auto save any custom items to catalog if toggle is active
+      const finalItems = [...items];
+      if (autoSaveNewItems) {
+        for (let i = 0; i < finalItems.length; i++) {
+          const it = finalItems[i];
+          if (it.isCustom && !it.savedToCatalog) {
+            try {
+              const resProd = await fetch("/api/products", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  nameAr: it.name.trim(),
+                  nameEn: it.name.trim(),
+                  brandAr: it.specs?.includes("داهوا") ? "داهوا" : "دي سي سمارت",
+                  price: it.unitPrice,
+                  descriptionAr: it.specs || "مهمات تركيب ومعدات",
+                }),
+              });
+              const prodData = await resProd.json();
+              if (resProd.ok && prodData.product) {
+                finalItems[i].id = prodData.product.id;
+                finalItems[i].savedToCatalog = true;
+                finalItems[i].code = prodData.code;
+              }
+            } catch (pErr) {
+              console.warn("Auto save item error:", pErr);
+            }
+          }
+        }
       }
 
-      alert(`✅ تم حفظ عرض السعر بنجاح برقم: ${data.quote.quoteNumber}`);
+      const payload = {
+        clientName: clientName.trim(),
+        clientPhone: clientPhone.trim(),
+        clientAddress: clientAddress.trim() || null,
+        clientCompany: clientCompany.trim() || null,
+        projectType,
+        items: finalItems,
+        subtotal,
+        installationFee,
+        discount,
+        tax: taxAmount,
+        totalAmount,
+        warrantyPeriod,
+        terms,
+        validUntil: new Date(Date.now() + validDays * 24 * 60 * 60 * 1000).toISOString(),
+        notes,
+        createdBy: "مهندس المبيعات / إدارة دي سي سمارت",
+      };
+
+      let quoteResult: Quote;
+
+      if (editingQuoteId) {
+        // UPDATE EXISTING QUOTE
+        const res = await fetch(`/api/quotes/${editingQuoteId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "فشل تعديل عرض السعر");
+        quoteResult = data.quote;
+        alert(`✅ تم تحديث وتعديل عرض السعر بنجاح برقم: ${quoteResult.quoteNumber}`);
+      } else {
+        // CREATE NEW QUOTE
+        const res = await fetch("/api/quotes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "فشل حفظ عرض السعر");
+        quoteResult = data.quote;
+        alert(`✅ تم حفظ عرض السعر بنجاح برقم: ${quoteResult.quoteNumber}`);
+      }
+
       // Open preview
-      openPreview(data.quote);
-      // Refresh list
+      openPreview(quoteResult);
+      // Refresh quotes list
       fetchQuotes();
-      // Reset form
+      // If was editing, reset edit state
+      setEditingQuoteId(null);
+      setEditingQuoteNumber(null);
       resetForm();
     } catch (err: any) {
       alert(err.message || "حدث خطأ أثناء الحفظ");
@@ -282,6 +505,7 @@ export default function QuotesPage() {
     setItems([]);
     setInstallationFee(500);
     setDiscount(0);
+    setTaxPercent(0);
     setNotes("");
   };
 
@@ -337,7 +561,7 @@ export default function QuotesPage() {
 
     const msg = `السلام عليكم ورحمة الله وبركاته،
 أهلاً بحضرتك أستاذ *${q.clientName}* 🌸
-مرفق لحضرتك تفاصيل عرض السعر الرسمي من شركة *دي سي سمارت لأنظمة المراقبة والتحكم الذكي*:
+مرفق لحضرتك تفاصيل عرض السعر الرسمي المعتمد من شركة *دي سي سمارت لأنظمة المراقبة والتحكم الذكي*:
 
 📄 *رقم عرض السعر:* ${q.quoteNumber}
 🏢 *نوع المشروع:* ${q.projectType}
@@ -348,18 +572,18 @@ export default function QuotesPage() {
 ${itemsText}
 
 🔧 *مصنعية التركيب والبرمجة:* ${q.installationFee.toLocaleString()} ج.م
-${q.discount > 0 ? `🎁 *الخصم الخاص:* -${q.discount.toLocaleString()} ج.م\n` : ""}💰 *الإجمالي النهائي:* *${q.totalAmount.toLocaleString()} ج.م*
+${q.discount > 0 ? `🎁 *الخصم الخاص:* -${q.discount.toLocaleString()} ج.م\n` : ""}💰 *الإجمالي النهائي المستحق:* *${q.totalAmount.toLocaleString()} ج.م*
 ━━━━━━━━━━━━━━━━━━━
 
-🛡️ *الضمان:*
+🛡️ *الضمان المعتمد:*
 ${q.warrantyPeriod}
 
 📝 *الشروط والأحكام:*
 ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد التسليم والتشغيل التجريبي"}
 
 📞 *للتواصل والاستفسار:*
-01008657085 — 01281248731
-📍 *فرع طنطا:* محافظة الغربية
+مبيعات: 01008657085 — دعم وواتساب: 01281248731
+📍 *فرع طنطا:* محافظة الغربية — جمهورية مصر العربية
 ✨ *دي سي سمارت — شريككم المعتمد لأمان وحماية ممتلكاتكم*`;
 
     return encodeURIComponent(msg);
@@ -375,6 +599,148 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
 
     const encodedMsg = buildWhatsAppMessage(q, qItems);
     window.open(`https://wa.me/${phoneWithCountry}?text=${encodedMsg}`, "_blank");
+  };
+
+  // Download Quote as PNG Image
+  const handleDownloadImage = async () => {
+    if (!printRef.current || !previewQuote) return;
+    try {
+      setIsExporting(true);
+      setExportMessage("جاري تحويل عرض السعر إلى صورة عالية الدقة...");
+
+      const dataUrl = await toPng(printRef.current, {
+        quality: 0.98,
+        pixelRatio: 2,
+        backgroundColor: previewTheme === "dark" ? "#0f172a" : "#ffffff",
+      });
+
+      const link = document.createElement("a");
+      link.download = `عرض-سعر-دي-سي-سمارت-${previewQuote.quoteNumber}.png`;
+      link.href = dataUrl;
+      link.click();
+
+      setExportMessage("✅ تم تحميل الصورة بنجاح!");
+      setTimeout(() => setExportMessage(null), 3000);
+    } catch (err: any) {
+      console.error("Image export error:", err);
+      alert("حدث خطأ أثناء تصدير الصورة. يرجى المحاولة مرة أخرى.");
+      setExportMessage(null);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Download Quote as PDF Document
+  const handleDownloadPdf = async () => {
+    if (!printRef.current || !previewQuote) return;
+    try {
+      setIsExporting(true);
+      setExportMessage("جاري إنشاء وتصدير ملف PDF المعتمد...");
+
+      const dataUrl = await toPng(printRef.current, {
+        quality: 0.98,
+        pixelRatio: 2,
+        backgroundColor: previewTheme === "dark" ? "#0f172a" : "#ffffff",
+      });
+
+      const img = new Image();
+      img.src = dataUrl;
+      await new Promise((resolve) => (img.onload = resolve));
+
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const imgWidth = 210; // A4 width mm
+      const pageHeight = 297; // A4 height mm
+      const imgHeight = (img.height * imgWidth) / img.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(dataUrl, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(dataUrl, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`عرض-سعر-دي-سي-سمارت-${previewQuote.quoteNumber}.pdf`);
+      setExportMessage("✅ تم تصدير ملف PDF بنجاح!");
+      setTimeout(() => setExportMessage(null), 3000);
+    } catch (err: any) {
+      console.error("PDF export error:", err);
+      alert("حدث خطأ أثناء تصدير ملف PDF");
+      setExportMessage(null);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Share as Image via WhatsApp / Native Share
+  const handleShareAsImage = async (q: Quote) => {
+    if (!printRef.current) return;
+    try {
+      setIsExporting(true);
+      setExportMessage("جاري إعداد صورة العرض للإرسال عبر واتساب...");
+
+      const blob = await toBlob(printRef.current, {
+        quality: 0.98,
+        pixelRatio: 2,
+        backgroundColor: previewTheme === "dark" ? "#0f172a" : "#ffffff",
+      });
+
+      if (!blob) throw new Error("تعذر إنشاء صورة العرض");
+
+      const file = new File([blob], `عرض-سعر-${q.quoteNumber}.png`, {
+        type: "image/png",
+      });
+
+      // 1. If native share with file is supported (Android/iOS)
+      if (typeof navigator !== "undefined" && navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `عرض سعر ${q.quoteNumber} — دي سي سمارت`,
+          text: `عرض سعر رسمي معتمد من شركة دي سي سمارت لأنظمة المراقبة للعميل: ${q.clientName}`,
+        });
+        setExportMessage(null);
+        return;
+      }
+
+      // 2. Desktop Fallback: Copy to Clipboard so user can press Ctrl+V in WhatsApp Web
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+        alert(
+          "📋 تم نسخ صورة عرض السعر للحافظة بنجاح!\n\nسيتم الآن فتح محادثة العميل على واتساب، اضغط على (Ctrl + V / لصق) لإرسال الصورة فوراً كصورة مرفقة."
+        );
+      } catch (clipErr) {
+        // 3. Fallback: Download file
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `عرض-سعر-${q.quoteNumber}.png`;
+        a.click();
+        alert(
+          "📥 تم تنزيل صورة عرض السعر على جهازك.\n\nيمكنك الآن إرفاقها للعميل في محادثة الواتساب التي ستفتح الآن."
+        );
+      }
+
+      // Open WhatsApp chat
+      openWhatsApp(q, previewItems);
+      setExportMessage(null);
+    } catch (err: any) {
+      console.error("Share image error:", err);
+      // Fallback to text WhatsApp
+      openWhatsApp(q, previewItems);
+      setExportMessage(null);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handlePrint = () => {
@@ -399,7 +765,7 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                نظام المقاولات والتركيبات المتقدم
+                منظومة عروض الأسعار الذكية المعتمدة
               </span>
               <span className="text-xs text-slate-400">| دي سي سمارت — طنطا</span>
             </div>
@@ -408,13 +774,16 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
               <span>مولد وإدارة عروض الأسعار (Quotations)</span>
             </h1>
             <p className="text-xs text-slate-300">
-              إنشاء عروض أسعار هندسية متكاملة لعملاء المنازل والشركات والمصانع ومشاركتها عبر واتساب وتصديرها PDF معتمدة
+              إنشاء وتعديل عروض أسعار هندسية متكاملة، حفظها كصور عالية الدقة أو PDF معتمد، وإرسالها للعملاء بضغطة زر
             </p>
           </div>
 
           <div className="flex items-center gap-2 bg-slate-900/90 p-1.5 rounded-xl border border-cyan-500/20">
             <button
-              onClick={() => setActiveTab("builder")}
+              onClick={() => {
+                if (editingQuoteId) handleCancelEdit();
+                setActiveTab("builder");
+              }}
               className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
                 activeTab === "builder"
                   ? "bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20"
@@ -422,7 +791,7 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
               }`}
             >
               <Plus size={15} />
-              <span>إنشاء عرض جديد</span>
+              <span>{editingQuoteId ? "متابعة التعديل" : "إنشاء عرض جديد"}</span>
             </button>
             <button
               onClick={() => {
@@ -444,6 +813,36 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
         {/* TAB 1: BUILDER */}
         {activeTab === "builder" && (
           <form onSubmit={handleSaveQuote} className="space-y-6">
+            {/* Edit Mode Active Banner */}
+            {editingQuoteId && (
+              <div className="p-4 rounded-2xl bg-amber-950/60 border-2 border-amber-500/60 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg shadow-amber-950/30">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400">
+                    <Edit3 size={20} />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <span>أنت الآن في وضع تعديل عرض السعر رقم:</span>
+                      <span className="font-mono text-amber-300 font-black underline">
+                        {editingQuoteNumber}
+                      </span>
+                    </h3>
+                    <p className="text-xs text-amber-200/80">
+                      يمكنك تعديل أي بيانات أو إضافة/حذف بنود وتحديث المبالغ، ثم الضغط على زر الحفظ أدناه
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-500/30 transition flex items-center gap-1.5"
+                >
+                  <X size={14} />
+                  <span>إلغاء التعديل والبدء من جديد</span>
+                </button>
+              </div>
+            )}
+
             {/* Client & Project Details */}
             <div className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-slate-800">
@@ -548,12 +947,24 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
             {/* Items Table & Product Search */}
             <div className="p-5 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-800">
-                <h3 className="text-sm font-bold text-cyan-400 flex items-center gap-2">
-                  <ShieldCheck size={16} />
-                  <span>مكونات وبنود المنظومة الأمنية ({items.length} صنف)</span>
-                </h3>
-
                 <div className="flex items-center gap-2">
+                  <ShieldCheck size={16} className="text-cyan-400" />
+                  <h3 className="text-sm font-bold text-white">
+                    مكونات وبنود المنظومة الأمنية ({items.length} صنف)
+                  </h3>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="flex items-center gap-1.5 text-[11px] text-cyan-300 bg-slate-950 px-2.5 py-1.5 rounded-lg border border-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={autoSaveNewItems}
+                      onChange={(e) => setAutoSaveNewItems(e.target.checked)}
+                      className="rounded border-slate-700 text-cyan-500 focus:ring-0"
+                    />
+                    <span>تسجيل أي بند يدوي تلقائياً بالكتالوج</span>
+                  </label>
+
                   <button
                     type="button"
                     onClick={addCustomItem}
@@ -606,10 +1017,11 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
                     </div>
 
                     {dbProducts
-                      .filter((p) =>
-                        p.nameAr.toLowerCase().includes(productSearch.toLowerCase()) ||
-                        p.brandAr?.toLowerCase().includes(productSearch.toLowerCase()) ||
-                        p.category?.nameAr?.toLowerCase().includes(productSearch.toLowerCase())
+                      .filter(
+                        (p) =>
+                          p.nameAr.toLowerCase().includes(productSearch.toLowerCase()) ||
+                          p.brandAr?.toLowerCase().includes(productSearch.toLowerCase()) ||
+                          p.category?.nameAr?.toLowerCase().includes(productSearch.toLowerCase())
                       )
                       .slice(0, 30)
                       .map((p) => (
@@ -621,7 +1033,7 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
                           <div className="space-y-0.5">
                             <p className="font-bold text-white">{p.nameAr}</p>
                             <p className="text-[10px] text-slate-400">
-                              {p.brandAr} • {p.category?.nameAr}
+                              {p.brandAr} • {p.category?.nameAr || "معدات ومهمات"}
                             </p>
                           </div>
                           <div className="text-left">
@@ -658,12 +1070,13 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
                         <th className="p-3 w-24 text-center">الكمية</th>
                         <th className="p-3 w-32 text-center">سعر الوحدة (ج.م)</th>
                         <th className="p-3 w-32 text-center">الإجمالي (ج.م)</th>
+                        <th className="p-3 w-28 text-center">حفظ بالكتالوج</th>
                         <th className="p-3 w-12 text-center">إجراء</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/60">
                       {items.map((it, idx) => (
-                        <tr key={it.id} className="hover:bg-slate-950/40">
+                        <tr key={it.id || idx} className="hover:bg-slate-950/40">
                           <td className="p-3 text-slate-400 font-mono">{idx + 1}</td>
                           <td className="p-3">
                             <input
@@ -672,6 +1085,11 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
                               onChange={(e) => updateItemName(idx, e.target.value)}
                               className="w-full bg-slate-950 px-2.5 py-1.5 rounded-lg border border-slate-800 text-white font-medium focus:border-cyan-500 focus:outline-none"
                             />
+                            {it.code && (
+                              <span className="block mt-1 font-mono text-[10px] text-cyan-400 font-bold">
+                                كود: {it.code}
+                              </span>
+                            )}
                           </td>
                           <td className="p-3">
                             <input
@@ -718,6 +1136,24 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
                           </td>
                           <td className="p-3 text-center font-black text-white">
                             {it.total.toLocaleString()} ج.م
+                          </td>
+                          <td className="p-3 text-center">
+                            {it.savedToCatalog || !it.isCustom ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-emerald-950/60 text-emerald-400 border border-emerald-500/30">
+                                <Check size={11} />
+                                <span>مسجل بالكتالوج</span>
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenCatalogModal(idx)}
+                                className="px-2 py-1 rounded-lg text-[10px] font-bold bg-cyan-950/70 hover:bg-cyan-900 text-cyan-300 border border-cyan-500/40 transition flex items-center justify-center gap-1 mx-auto"
+                                title="حفظ هذا البند المخصص كصنف دائم في كتالوج المنتجات وتوليد كود"
+                              >
+                                <Save size={12} />
+                                <span>حفظ بالكتالوج</span>
+                              </button>
+                            )}
                           </td>
                           <td className="p-3 text-center">
                             <button
@@ -867,15 +1303,24 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
                     className="w-full sm:flex-1 py-3 px-5 rounded-xl font-bold text-xs bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 shadow-lg shadow-cyan-500/20 transition flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     <FileCheck size={18} />
-                    <span>{loading ? "جاري الحفظ..." : "حفظ عرض السعر واستخراج الوثيقة"}</span>
+                    <span>
+                      {loading
+                        ? "جاري الحفظ..."
+                        : editingQuoteId
+                        ? `حفظ التعديلات على عرض السعر (${editingQuoteNumber})`
+                        : "حفظ عرض السعر واستخراج الوثيقة الرسمية"}
+                    </span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={resetForm}
+                    onClick={() => {
+                      if (editingQuoteId) handleCancelEdit();
+                      else resetForm();
+                    }}
                     className="w-full sm:w-auto py-3 px-4 rounded-xl font-bold text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
                   >
-                    إعادة ضبط
+                    {editingQuoteId ? "إلغاء التعديل" : "إعادة ضبط"}
                   </button>
                 </div>
               </div>
@@ -998,9 +1443,16 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
                               <button
                                 onClick={() => openPreview(q)}
                                 className="p-1.5 rounded-lg bg-cyan-950/60 text-cyan-300 hover:bg-cyan-900 border border-cyan-500/30 transition"
-                                title="معاينة وطباعة العرض"
+                                title="معاينة وحفظ العرض"
                               >
                                 <Eye size={14} />
+                              </button>
+                              <button
+                                onClick={() => handleStartEdit(q)}
+                                className="p-1.5 rounded-lg bg-amber-950/60 text-amber-300 hover:bg-amber-900 border border-amber-500/30 transition"
+                                title="تعديل هذا العرض"
+                              >
+                                <Edit3 size={14} />
                               </button>
                               <button
                                 onClick={() => openWhatsApp(q, parsedItems)}
@@ -1030,36 +1482,215 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
       </div>
 
       {/* ========================================================================= */}
-      {/* OFFICIAL PRINTABLE QUOTATION MODAL & PRINT STYLES */}
+      {/* MODAL 1: SAVE ITEM TO CATALOG */}
+      {/* ========================================================================= */}
+      {catalogModalItem && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-slate-900 border border-cyan-500/40 rounded-2xl p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <Save className="text-cyan-400" size={18} />
+                <h3 className="text-sm font-bold text-white">تسجيل صنف جديد في الكتالوج</h3>
+              </div>
+              <button
+                onClick={() => setCatalogModalItem(null)}
+                className="text-slate-400 hover:text-white text-xs"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              سيتم تسجيل هذا البند رسمياً في قاعدة بيانات المنتجات وسيتم توليد كود خاص به (DCS-XXXX) ليتوفر دائماً في قائمة الأصناف وعروض الأسعار القادمة.
+            </p>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-300 font-bold mb-1">اسم الصنف والموديل *</label>
+                <input
+                  type="text"
+                  value={catalogModalItem.name}
+                  onChange={(e) =>
+                    setCatalogModalItem({ ...catalogModalItem, name: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-medium focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-bold mb-1">الماركة / العلامة التجارية</label>
+                <input
+                  type="text"
+                  value={catalogModalItem.brand}
+                  onChange={(e) =>
+                    setCatalogModalItem({ ...catalogModalItem, brand: e.target.value })
+                  }
+                  placeholder="مثال: داهوا Dahua أو يوني آرك أو دي سي سمارت"
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-medium focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-bold mb-1">القسم / التصنيف</label>
+                <select
+                  value={catalogModalItem.categoryId}
+                  onChange={(e) =>
+                    setCatalogModalItem({ ...catalogModalItem, categoryId: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white font-medium focus:border-cyan-500 focus:outline-none"
+                >
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.nameAr}
+                    </option>
+                  ))}
+                  {categories.length === 0 && (
+                    <option value="cat_accessories">إكسسوارات ومستلزمات تركيب</option>
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-bold mb-1">سعر الوحدة (ج.م) *</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={catalogModalItem.price}
+                  onChange={(e) =>
+                    setCatalogModalItem({
+                      ...catalogModalItem,
+                      price: parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-cyan-300 font-bold font-mono focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-bold mb-1">الوصف الفني والمواصفات</label>
+                <input
+                  type="text"
+                  value={catalogModalItem.specs}
+                  onChange={(e) =>
+                    setCatalogModalItem({ ...catalogModalItem, specs: e.target.value })
+                  }
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-white focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setCatalogModalItem(null)}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+              >
+                إلغاء
+              </button>
+              <button
+                type="button"
+                disabled={catalogModalLoading}
+                onClick={handleSaveItemToCatalog}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 shadow-md shadow-cyan-500/20 transition flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <Save size={14} />
+                <span>{catalogModalLoading ? "جاري الحفظ..." : "تأكيد الحفظ بالكتالوج"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL 2: OFFICIAL PRINTABLE QUOTATION (FIXED HEADER & EXPORT AS IMAGE/PDF) */}
       {/* ========================================================================= */}
       {isPreviewOpen && previewQuote && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 print:p-0 print:bg-white print:static">
-          <div className="w-full max-w-4xl bg-slate-900 border border-cyan-500/30 rounded-2xl shadow-2xl overflow-hidden print:border-none print:shadow-none print:w-full print:max-w-none print:bg-white print:text-black">
-            {/* Modal Controls (Hidden in Print) */}
-            <div className="flex items-center justify-between p-4 bg-slate-950 border-b border-slate-800 print:hidden">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md flex items-start justify-center p-2 sm:p-6 print:p-0 print:bg-white print:static">
+          <div className="w-full max-w-4xl bg-slate-900 border border-cyan-500/40 rounded-2xl shadow-2xl my-4 sm:my-8 overflow-hidden print:border-none print:shadow-none print:w-full print:max-w-none print:bg-white print:text-black print:my-0">
+            {/* Sticky Modal Controls Bar (Always Visible at Top) */}
+            <div className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-2 p-3 sm:p-4 bg-slate-950/95 backdrop-blur border-b border-cyan-500/30 print:hidden shadow-lg">
               <div className="flex items-center gap-2">
-                <FileText className="text-cyan-400" size={18} />
-                <span className="font-bold text-white text-xs">
-                  معاينة عرض السعر الرسمي: {previewQuote.quoteNumber}
-                </span>
+                <FileText className="text-cyan-400" size={20} />
+                <div>
+                  <span className="font-bold text-white text-xs block">
+                    عرض سعر رسمي معتمد: {previewQuote.quoteNumber}
+                  </span>
+                  <span className="text-[10px] text-slate-400">
+                    العميل: {previewQuote.clientName}
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
+
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                {/* Edit Button */}
                 <button
                   type="button"
-                  onClick={() => openWhatsApp(previewQuote, previewItems)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition flex items-center gap-1.5"
+                  onClick={() => handleStartEdit(previewQuote)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 transition flex items-center gap-1.5"
+                  title="تعديل هذا العرض في شاشة التحرير"
+                >
+                  <Edit3 size={14} />
+                  <span className="hidden sm:inline">تعديل العرض</span>
+                </button>
+
+                {/* Theme Toggle (Dark VIP / Clean White) */}
+                <button
+                  type="button"
+                  onClick={() => setPreviewTheme(previewTheme === "dark" ? "light" : "dark")}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 transition"
+                  title="تبديل مظهر العرض بين الداكن والأبيض"
+                >
+                  {previewTheme === "dark" ? "🌙 داكن فاخر" : "☀️ أبيض رسمي"}
+                </button>
+
+                {/* Save as High-Res PNG Image */}
+                <button
+                  type="button"
+                  disabled={isExporting}
+                  onClick={handleDownloadImage}
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white transition flex items-center gap-1.5 disabled:opacity-50"
+                  title="تنزيل عرض السعر كصورة عالية الدقة PNG"
+                >
+                  <ImageIcon size={14} />
+                  <span>حفظ كصورة</span>
+                </button>
+
+                {/* Download as PDF */}
+                <button
+                  type="button"
+                  disabled={isExporting}
+                  onClick={handleDownloadPdf}
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white transition flex items-center gap-1.5 disabled:opacity-50"
+                  title="تحميل عرض السعر كملف PDF معتمد"
+                >
+                  <Download size={14} />
+                  <span>تحميل PDF</span>
+                </button>
+
+                {/* Share as Image to WhatsApp */}
+                <button
+                  type="button"
+                  disabled={isExporting}
+                  onClick={() => handleShareAsImage(previewQuote)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition flex items-center gap-1.5 disabled:opacity-50"
+                  title="إرسال صورة العرض عبر واتساب للعميل"
                 >
                   <Share2 size={14} />
-                  <span>إرسال واتساب للعميل</span>
+                  <span>إرسال واتساب (صورة)</span>
                 </button>
+
+                {/* Native Browser Print */}
                 <button
                   type="button"
                   onClick={handlePrint}
-                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition flex items-center gap-1.5"
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition flex items-center gap-1.5"
+                  title="طباعة عبر المتصفح"
                 >
                   <Printer size={14} />
-                  <span>طباعة / حفظ PDF</span>
+                  <span className="hidden sm:inline">طباعة</span>
                 </button>
+
+                {/* Close Modal */}
                 <button
                   type="button"
                   onClick={() => setIsPreviewOpen(false)}
@@ -1070,93 +1701,233 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
               </div>
             </div>
 
-            {/* Printable A4 Quotation Sheet */}
+            {/* Exporting Progress Toast */}
+            {exportMessage && (
+              <div className="bg-cyan-500 text-slate-950 text-xs font-bold px-4 py-2 text-center animate-pulse print:hidden">
+                {exportMessage}
+              </div>
+            )}
+
+            {/* Printable & Exportable A4 Quotation Sheet */}
             <div
               ref={printRef}
-              className="p-6 md:p-8 bg-slate-900 print:bg-white print:text-black print:p-6 space-y-6 text-right"
               dir="rtl"
+              className={`p-6 sm:p-10 transition-colors text-right space-y-6 ${
+                previewTheme === "dark"
+                  ? "bg-slate-900 text-white"
+                  : "bg-white text-slate-900"
+              } print:bg-white print:text-black print:p-6 print:space-y-4`}
+              style={{ minHeight: "800px" }}
             >
-              {/* Header */}
-              <div className="flex items-center justify-between border-b-2 border-cyan-500 pb-5 print:border-black">
-                <div className="space-y-1">
-                  <h2 className="text-xl md:text-2xl font-black text-white print:text-black flex items-center gap-2">
-                    <span>دي سي سمارت — للأنظمة الأمنية والتحكم الذكي</span>
-                  </h2>
-                  <p className="text-xs font-bold text-cyan-400 print:text-gray-700">
-                    DC SMART SECURITY & SURVEILLANCE SYSTEMS
-                  </p>
-                  <p className="text-[11px] text-slate-300 print:text-gray-600 flex items-center gap-3">
-                    <span>📍 طنطا — محافظة الغربية</span>
-                    <span>📞 01008657085 — 01281248731</span>
-                  </p>
+              {/* Official Header (Fully Visible & Symmetrical) */}
+              <div
+                className={`flex flex-col sm:flex-row items-center justify-between gap-4 pb-6 border-b-2 ${
+                  previewTheme === "dark"
+                    ? "border-cyan-500/60 bg-slate-950/40"
+                    : "border-slate-900 bg-slate-50"
+                } p-5 rounded-2xl print:border-black print:bg-transparent print:p-0 print:pb-4`}
+              >
+                {/* Brand & Slogan */}
+                <div className="flex items-center gap-4 text-center sm:text-right">
+                  <div
+                    className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black text-2xl shadow-lg ${
+                      previewTheme === "dark"
+                        ? "bg-gradient-to-br from-cyan-500 to-blue-600 text-slate-950 shadow-cyan-500/20"
+                        : "bg-slate-900 text-cyan-400 shadow-slate-900/20"
+                    } print:border-2 print:border-black print:bg-transparent print:text-black`}
+                  >
+                    🛡️
+                  </div>
+                  <div className="space-y-1">
+                    <h2
+                      className={`text-xl sm:text-2xl font-black tracking-tight ${
+                        previewTheme === "dark" ? "text-white" : "text-slate-900"
+                      } print:text-black`}
+                    >
+                      دي سي سمارت — للأنظمة الأمنية والتحكم الذكي
+                    </h2>
+                    <p
+                      className={`text-xs font-bold font-mono ${
+                        previewTheme === "dark" ? "text-cyan-400" : "text-cyan-700"
+                      } print:text-gray-800`}
+                    >
+                      DC SMART CCTV & ADVANCED SURVEILLANCE SYSTEMS
+                    </p>
+                    <div
+                      className={`text-[11px] font-medium flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-1 ${
+                        previewTheme === "dark" ? "text-slate-300" : "text-slate-600"
+                      } print:text-gray-700`}
+                    >
+                      <span>📍 طنطا — محافظة الغربية</span>
+                      <span>📞 مبيعات: 01008657085</span>
+                      <span>💬 دعم: 01281248731</span>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="text-left space-y-1">
-                  <div className="px-3 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 print:border-black print:text-black print:bg-gray-100 font-mono font-black text-sm">
+                {/* Quotation Metadata Card */}
+                <div className="text-center sm:text-left space-y-1.5 shrink-0">
+                  <div
+                    className={`px-4 py-2 rounded-xl font-mono font-black text-sm tracking-wider shadow-inner ${
+                      previewTheme === "dark"
+                        ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+                        : "bg-slate-100 text-slate-900 border border-slate-300"
+                    } print:border-2 print:border-black print:text-black print:bg-transparent`}
+                  >
                     {previewQuote.quoteNumber}
                   </div>
-                  <p className="text-[11px] text-slate-400 print:text-gray-600">
-                    التاريخ: {new Date(previewQuote.createdAt).toLocaleDateString("ar-EG")}
+                  <p
+                    className={`text-[11px] font-medium ${
+                      previewTheme === "dark" ? "text-slate-400" : "text-slate-600"
+                    } print:text-gray-700`}
+                  >
+                    تاريخ التحرير:{" "}
+                    <span className="font-bold">
+                      {new Date(previewQuote.createdAt).toLocaleDateString("ar-EG")}
+                    </span>
                   </p>
-                  <p className="text-[11px] text-slate-400 print:text-gray-600">
+                  <p
+                    className={`text-[11px] font-medium ${
+                      previewTheme === "dark" ? "text-slate-400" : "text-slate-600"
+                    } print:text-gray-700`}
+                  >
                     صالح حتى:{" "}
-                    {previewQuote.validUntil
-                      ? new Date(previewQuote.validUntil).toLocaleDateString("ar-EG")
-                      : "15 يوماً من تاريخه"}
+                    <span className="font-bold text-amber-500 print:text-black">
+                      {previewQuote.validUntil
+                        ? new Date(previewQuote.validUntil).toLocaleDateString("ar-EG")
+                        : "15 يوماً من تاريخه"}
+                    </span>
                   </p>
                 </div>
               </div>
 
-              {/* Client Specification Box */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 print:bg-gray-50 print:border-gray-300 text-xs">
+              {/* Client Specification Card */}
+              <div
+                className={`grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-xl border text-xs ${
+                  previewTheme === "dark"
+                    ? "bg-slate-950/70 border-slate-800"
+                    : "bg-slate-50 border-slate-200"
+                } print:bg-gray-50 print:border-gray-400 print:text-black`}
+              >
                 <div>
-                  <span className="block text-slate-400 print:text-gray-500 text-[10px]">العميل الكريم:</span>
-                  <span className="font-bold text-white print:text-black">{previewQuote.clientName}</span>
+                  <span
+                    className={`block text-[10px] font-medium ${
+                      previewTheme === "dark" ? "text-slate-400" : "text-slate-500"
+                    } print:text-gray-600`}
+                  >
+                    العميل الكريم:
+                  </span>
+                  <span className="font-bold">{previewQuote.clientName}</span>
                 </div>
+
                 <div>
-                  <span className="block text-slate-400 print:text-gray-500 text-[10px]">رقم الهاتف:</span>
-                  <span className="font-bold text-white print:text-black font-mono">{previewQuote.clientPhone}</span>
+                  <span
+                    className={`block text-[10px] font-medium ${
+                      previewTheme === "dark" ? "text-slate-400" : "text-slate-500"
+                    } print:text-gray-600`}
+                  >
+                    رقم الهاتف / الواتساب:
+                  </span>
+                  <span className="font-bold font-mono">{previewQuote.clientPhone}</span>
                 </div>
+
                 <div>
-                  <span className="block text-slate-400 print:text-gray-500 text-[10px]">نوع المشروع:</span>
-                  <span className="font-bold text-white print:text-black">{previewQuote.projectType}</span>
+                  <span
+                    className={`block text-[10px] font-medium ${
+                      previewTheme === "dark" ? "text-slate-400" : "text-slate-500"
+                    } print:text-gray-600`}
+                  >
+                    نوع المشروع / المنشأة:
+                  </span>
+                  <span className="font-bold">{previewQuote.projectType}</span>
                 </div>
+
                 <div>
-                  <span className="block text-slate-400 print:text-gray-500 text-[10px]">الموقع / العنوان:</span>
-                  <span className="font-bold text-white print:text-black">
-                    {previewQuote.clientAddress || "طنطا"}
+                  <span
+                    className={`block text-[10px] font-medium ${
+                      previewTheme === "dark" ? "text-slate-400" : "text-slate-500"
+                    } print:text-gray-600`}
+                  >
+                    موقع التركيب:
+                  </span>
+                  <span className="font-bold">
+                    {previewQuote.clientAddress || "طنطا — محافظة الغربية"}
                   </span>
                 </div>
               </div>
 
               {/* Items Table */}
-              <div className="overflow-hidden rounded-xl border border-slate-800 print:border-gray-400">
+              <div
+                className={`overflow-hidden rounded-xl border ${
+                  previewTheme === "dark" ? "border-slate-800" : "border-slate-300"
+                } print:border-black`}
+              >
                 <table className="w-full text-xs text-right border-collapse">
                   <thead>
-                    <tr className="bg-slate-950 text-cyan-400 print:bg-gray-200 print:text-black font-bold border-b border-slate-800 print:border-gray-400">
-                      <th className="p-2.5 w-8 text-center">#</th>
-                      <th className="p-2.5">الصنف والموديل</th>
-                      <th className="p-2.5">المواصفات الفنية</th>
-                      <th className="p-2.5 w-16 text-center">الكمية</th>
-                      <th className="p-2.5 w-24 text-center">سعر الوحدة</th>
-                      <th className="p-2.5 w-28 text-center">الإجمالي</th>
+                    <tr
+                      className={`font-bold border-b ${
+                        previewTheme === "dark"
+                          ? "bg-slate-950 text-cyan-400 border-slate-800"
+                          : "bg-slate-100 text-slate-900 border-slate-300"
+                      } print:bg-gray-200 print:text-black print:border-black`}
+                    >
+                      <th className="p-3 w-10 text-center">#</th>
+                      <th className="p-3">الصنف والموديل</th>
+                      <th className="p-3">المواصفات الفنية والملاحظات</th>
+                      <th className="p-3 w-16 text-center">الكمية</th>
+                      <th className="p-3 w-28 text-center">سعر الوحدة</th>
+                      <th className="p-3 w-32 text-center">الإجمالي</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800 print:divide-gray-300 print:text-black">
+                  <tbody
+                    className={`divide-y ${
+                      previewTheme === "dark" ? "divide-slate-800" : "divide-slate-200"
+                    } print:divide-gray-300 print:text-black`}
+                  >
                     {previewItems.map((it, idx) => (
-                      <tr key={it.id || idx} className="print:text-black">
-                        <td className="p-2.5 text-center font-mono text-slate-400 print:text-gray-600">
+                      <tr
+                        key={it.id || idx}
+                        className={`${
+                          idx % 2 === 0
+                            ? previewTheme === "dark"
+                              ? "bg-slate-900/50"
+                              : "bg-white"
+                            : previewTheme === "dark"
+                            ? "bg-slate-950/30"
+                            : "bg-slate-50"
+                        } print:bg-transparent`}
+                      >
+                        <td
+                          className={`p-3 text-center font-mono ${
+                            previewTheme === "dark" ? "text-slate-400" : "text-slate-600"
+                          } print:text-gray-800`}
+                        >
                           {idx + 1}
                         </td>
-                        <td className="p-2.5 font-bold text-white print:text-black">{it.name}</td>
-                        <td className="p-2.5 text-slate-300 print:text-gray-700 text-[11px]">
-                          {it.specs || it.category || "—"}
+                        <td className="p-3">
+                          <p className="font-bold">{it.name}</p>
+                          {it.code && (
+                            <span className="font-mono text-[10px] text-cyan-400 print:text-gray-600 font-bold">
+                              كود: {it.code}
+                            </span>
+                          )}
                         </td>
-                        <td className="p-2.5 text-center font-bold">{it.quantity}</td>
-                        <td className="p-2.5 text-center font-mono">
+                        <td
+                          className={`p-3 text-[11px] ${
+                            previewTheme === "dark" ? "text-slate-300" : "text-slate-600"
+                          } print:text-gray-800`}
+                        >
+                          {it.specs || it.category || "أصلي معتمد"}
+                        </td>
+                        <td className="p-3 text-center font-bold font-mono">{it.quantity}</td>
+                        <td className="p-3 text-center font-mono font-medium">
                           {it.unitPrice.toLocaleString()} ج.م
                         </td>
-                        <td className="p-2.5 text-center font-black text-cyan-300 print:text-black font-mono">
+                        <td
+                          className={`p-3 text-center font-black font-mono ${
+                            previewTheme === "dark" ? "text-cyan-300" : "text-slate-900"
+                          } print:text-black`}
+                        >
                           {it.total.toLocaleString()} ج.م
                         </td>
                       </tr>
@@ -1167,68 +1938,154 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
 
               {/* Financial Totals */}
               <div className="flex justify-end">
-                <div className="w-full sm:w-80 space-y-2 text-xs">
-                  <div className="flex justify-between py-1 border-b border-slate-800 print:border-gray-300 text-slate-300 print:text-gray-700">
-                    <span>مجموع المهمات:</span>
-                    <span className="font-mono font-bold">{previewQuote.subtotal.toLocaleString()} ج.م</span>
+                <div
+                  className={`w-full sm:w-88 space-y-2 p-4 rounded-xl border text-xs ${
+                    previewTheme === "dark"
+                      ? "bg-slate-950/60 border-slate-800"
+                      : "bg-slate-50 border-slate-200"
+                  } print:bg-transparent print:border-gray-400 print:text-black`}
+                >
+                  <div
+                    className={`flex justify-between py-1 border-b ${
+                      previewTheme === "dark"
+                        ? "border-slate-800 text-slate-300"
+                        : "border-slate-200 text-slate-700"
+                    } print:border-gray-300 print:text-black`}
+                  >
+                    <span>مجموع المهمات والمعدات:</span>
+                    <span className="font-mono font-bold">
+                      {previewQuote.subtotal.toLocaleString()} ج.م
+                    </span>
                   </div>
-                  <div className="flex justify-between py-1 border-b border-slate-800 print:border-gray-300 text-slate-300 print:text-gray-700">
-                    <span>التركيب والبرمجة:</span>
+
+                  <div
+                    className={`flex justify-between py-1 border-b ${
+                      previewTheme === "dark"
+                        ? "border-slate-800 text-slate-300"
+                        : "border-slate-200 text-slate-700"
+                    } print:border-gray-300 print:text-black`}
+                  >
+                    <span>مصنعية التركيب والبرمجة والتوصيل:</span>
                     <span className="font-mono font-bold">
                       {previewQuote.installationFee.toLocaleString()} ج.م
                     </span>
                   </div>
+
                   {previewQuote.discount > 0 && (
-                    <div className="flex justify-between py-1 border-b border-slate-800 print:border-gray-300 text-rose-400 print:text-red-600 font-bold">
+                    <div
+                      className={`flex justify-between py-1 border-b ${
+                        previewTheme === "dark"
+                          ? "border-slate-800 text-rose-400"
+                          : "border-slate-200 text-red-600"
+                      } font-bold print:border-gray-300 print:text-black`}
+                    >
                       <span>خصم خاص:</span>
-                      <span className="font-mono">-{previewQuote.discount.toLocaleString()} ج.م</span>
+                      <span className="font-mono">
+                        -{previewQuote.discount.toLocaleString()} ج.م
+                      </span>
                     </div>
                   )}
+
                   {previewQuote.tax > 0 && (
-                    <div className="flex justify-between py-1 border-b border-slate-800 print:border-gray-300 text-slate-300 print:text-gray-700">
+                    <div
+                      className={`flex justify-between py-1 border-b ${
+                        previewTheme === "dark"
+                          ? "border-slate-800 text-slate-300"
+                          : "border-slate-200 text-slate-700"
+                      } print:border-gray-300 print:text-black`}
+                    >
                       <span>ضريبة القيمة المضافة:</span>
-                      <span className="font-mono">+{previewQuote.tax.toLocaleString()} ج.م</span>
+                      <span className="font-mono">
+                        +{previewQuote.tax.toLocaleString()} ج.م
+                      </span>
                     </div>
                   )}
-                  <div className="flex justify-between py-2 px-3 rounded-xl bg-cyan-950/70 border border-cyan-500/40 print:bg-gray-100 print:border-black font-black text-sm text-cyan-300 print:text-black">
-                    <span>الإجمالي المستحق:</span>
-                    <span className="font-mono">{previewQuote.totalAmount.toLocaleString()} ج.م</span>
+
+                  <div
+                    className={`flex justify-between items-center py-2.5 px-3.5 rounded-xl font-black text-sm ${
+                      previewTheme === "dark"
+                        ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
+                        : "bg-slate-900 text-white"
+                    } print:bg-gray-100 print:border-2 print:border-black print:text-black`}
+                  >
+                    <span>الإجمالي النهائي المستحق:</span>
+                    <span className="font-mono text-base">
+                      {previewQuote.totalAmount.toLocaleString()} ج.م
+                    </span>
                   </div>
                 </div>
               </div>
 
               {/* Warranty & Terms Section */}
-              <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 print:bg-gray-50 print:border-gray-300 space-y-2 text-[11px] leading-relaxed">
-                <div className="font-bold text-cyan-400 print:text-black flex items-center gap-1.5">
+              <div
+                className={`p-4 rounded-xl border space-y-2 text-[11px] leading-relaxed ${
+                  previewTheme === "dark"
+                    ? "bg-slate-950/60 border-slate-800 text-slate-300"
+                    : "bg-slate-50 border-slate-200 text-slate-700"
+                } print:bg-gray-50 print:border-gray-400 print:text-black`}
+              >
+                <div
+                  className={`font-bold flex items-center gap-1.5 ${
+                    previewTheme === "dark" ? "text-cyan-400" : "text-cyan-800"
+                  } print:text-black`}
+                >
                   <ShieldCheck size={14} />
                   <span>الضمان المعتمد:</span>
                 </div>
-                <p className="text-slate-300 print:text-gray-700">{previewQuote.warrantyPeriod}</p>
+                <p>{previewQuote.warrantyPeriod}</p>
 
-                <div className="font-bold text-cyan-400 print:text-black pt-1">شروط التنفيذ والدفع:</div>
-                <p className="text-slate-300 print:text-gray-700">{previewQuote.terms}</p>
+                <div
+                  className={`font-bold pt-1 ${
+                    previewTheme === "dark" ? "text-cyan-400" : "text-cyan-800"
+                  } print:text-black`}
+                >
+                  شروط التنفيذ والدفع:
+                </div>
+                <p>{previewQuote.terms}</p>
 
                 {previewQuote.notes && (
-                  <div className="pt-1 text-slate-400 print:text-gray-600">
+                  <div
+                    className={`pt-1 ${
+                      previewTheme === "dark" ? "text-slate-400" : "text-slate-600"
+                    } print:text-gray-700`}
+                  >
                     <span className="font-bold">ملاحظات:</span> {previewQuote.notes}
                   </div>
                 )}
               </div>
 
-              {/* Signature / Approval Line */}
-              <div className="grid grid-cols-2 gap-8 pt-6 border-t border-slate-800 print:border-gray-300 text-xs">
+              {/* Signatures Line */}
+              <div
+                className={`grid grid-cols-2 gap-8 pt-6 border-t ${
+                  previewTheme === "dark" ? "border-slate-800" : "border-slate-200"
+                } print:border-gray-400 text-xs`}
+              >
                 <div className="space-y-6">
-                  <p className="font-bold text-slate-300 print:text-black">توقيع واعتماد العميل:</p>
-                  <p className="border-b border-dashed border-slate-700 print:border-black w-48"></p>
+                  <p className="font-bold">توقيع واعتماد العميل:</p>
+                  <p
+                    className={`border-b border-dashed w-48 ${
+                      previewTheme === "dark" ? "border-slate-700" : "border-slate-400"
+                    } print:border-black`}
+                  ></p>
                 </div>
                 <div className="text-left space-y-6">
-                  <p className="font-bold text-slate-300 print:text-black">إدارة شركة دي سي سمارت:</p>
-                  <p className="border-b border-dashed border-slate-700 print:border-black w-48 mr-auto"></p>
+                  <p className="font-bold">إدارة شركة دي سي سمارت:</p>
+                  <p
+                    className={`border-b border-dashed w-48 mr-auto ${
+                      previewTheme === "dark" ? "border-slate-700" : "border-slate-400"
+                    } print:border-black`}
+                  ></p>
                 </div>
               </div>
 
               {/* Developer Watermark with user phone number */}
-              <div className="pt-4 text-center border-t border-slate-800/80 print:border-gray-200 text-[11px] text-slate-400 print:text-gray-600 font-medium">
+              <div
+                className={`pt-4 text-center border-t text-[11px] font-bold ${
+                  previewTheme === "dark"
+                    ? "border-slate-800/80 text-cyan-400"
+                    : "border-slate-200 text-cyan-800"
+                } print:border-gray-200 print:text-gray-800`}
+              >
                 تم التطوير بواسطة شركة أوركا لتقنية المعلومات — 01018671000
               </div>
             </div>

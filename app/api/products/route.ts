@@ -50,17 +50,32 @@ export async function POST(req: Request) {
       image,
     } = body;
 
-    if (!nameAr || !price) {
-      return NextResponse.json({ error: "اسم العطر والسعر مطلوبان" }, { status: 400 });
+    if (!nameAr || price === undefined || price === null) {
+      return NextResponse.json({ error: "اسم الصنف والسعر مطلوبان" }, { status: 400 });
     }
 
     // Default category if not provided
     let catId = categoryId;
     if (!catId) {
-      const firstCat = await prisma.category.findFirst();
-      catId = firstCat ? firstCat.id : "";
+      const firstCat = await prisma.category.findFirst({
+        where: {
+          OR: [
+            { id: "cat_accessories" },
+            { nameAr: { contains: "إكسسوارات" } },
+            { nameAr: { contains: "مستلزمات" } },
+            { nameAr: { contains: "كاميرات" } },
+          ],
+        },
+      });
+      if (firstCat) {
+        catId = firstCat.id;
+      } else {
+        const anyCat = await prisma.category.findFirst();
+        catId = anyCat ? anyCat.id : "cat_accessories";
+      }
     }
 
+    const uniqueCode = `DCS-${Date.now().toString().slice(-4)}`;
     const slug = (nameEn || nameAr)
       .toLowerCase()
       .trim()
@@ -72,38 +87,41 @@ export async function POST(req: Request) {
         nameAr,
         nameEn: nameEn || nameAr,
         slug,
-        brandAr: brandAr || "روفي بارفيومز",
-        brandEn: brandEn || "Rovy Parfums",
+        brandAr: brandAr || "دي سي سمارت",
+        brandEn: brandEn || "DC Smart",
         categoryId: catId,
         price: Number(price),
         originalPrice: originalPrice ? Number(originalPrice) : null,
         discountPercent: Number(discountPercent) || 0,
-        volume: volume || "100 ml",
-        concentration: concentration || "Eau de Parfum",
-        type: type || "ORIGINAL",
+        volume: volume || "قطعة واحدة",
+        concentration: concentration || "أصلي معتمد",
+        type: type || "CCTV",
         stockQuantity: Number(stockQuantity) || 50,
         inStock: inStock !== undefined ? Boolean(inStock) : true,
         isWinter: Boolean(isWinter),
         isFeatured: Boolean(isFeatured),
-        topNotesAr: topNotesAr || "البرغموت الإيطالي والزعفران الفاخر",
-        topNotesEn: topNotesEn || "Italian Bergamot & Royal Saffron",
-        heartNotesAr: heartNotesAr || "الورد الدمشقي وخشب الأرز والعنبر",
-        heartNotesEn: heartNotesEn || "Damask Rose, Cedarwood & Amber",
-        baseNotesAr: baseNotesAr || "العود الكمبودي والمسك الملكي وفانيليا مدغشقر",
-        baseNotesEn: baseNotesEn || "Cambodian Oud, Royal Musk & Madagascar Vanilla",
-        descriptionAr: descriptionAr || "عطر فاخر يجسد الأصالة والرقي من ميني بيك.",
-        descriptionEn: descriptionEn || "A luxurious fragrance embodying elegance and sophistication.",
-        ingredientsAr: ingredientsAr || "كحول عطري نقي 96%، زيوت عطرية فرنسية مركزة.",
-        ingredientsEn: ingredientsEn || "Pure perfumer's alcohol 96%, concentrated French oils.",
-        image: image || "https://i.ibb.co/vzG70GZ/nano-stitch.jpg",
+        topNotesAr: topNotesAr || "رؤية ليلية فائقة الوضوح ومايك مدمج",
+        topNotesEn: topNotesEn || "Full Color Night Vision & Built-in Mic",
+        heartNotesAr: heartNotesAr || "معالج أمني متقدم وضمان معتمد عامين",
+        heartNotesEn: heartNotesEn || "Advanced Security Chipset & 2-Year Warranty",
+        baseNotesAr: baseNotesAr || "مقاومة للعوامل الجوية IP67 وتوصيل سريع",
+        baseNotesEn: baseNotesEn || "Weatherproof IP67 & Fast Deployment",
+        descriptionAr: descriptionAr || "معدات ومهمات مراقبة وحلول أمنية ذكية معتمدة من شركة دي سي سمارت.",
+        descriptionEn: descriptionEn || "Certified surveillance and smart security solutions by DC Smart.",
+        ingredientsAr: ingredientsAr || "مكونات أصلية متوافقة مع أنظمة HD و IP.",
+        ingredientsEn: ingredientsEn || "Original electronic components compatible with HD & IP.",
+        image: image || "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=600&auto=format&fit=crop&q=80",
+      },
+      include: {
+        category: true,
       },
     });
 
-    return NextResponse.json({ success: true, product });
+    return NextResponse.json({ success: true, product, code: uniqueCode });
   } catch (error: any) {
     console.error("Product create error:", error);
     return NextResponse.json(
-      { error: "فشل حفظ العطر الجديد", details: error.message },
+      { error: "فشل حفظ الصنف الجديد", details: error.message },
       { status: 500 }
     );
   }
