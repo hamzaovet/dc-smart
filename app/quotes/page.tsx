@@ -526,7 +526,9 @@ export default function QuotesPage() {
           body: JSON.stringify(payload),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "فشل تعديل عرض السعر");
+        if (!res.ok) {
+          throw new Error(data.details ? `${data.error}: ${data.details}` : (data.error || "فشل تعديل عرض السعر"));
+        }
         quoteResult = data.quote;
         alert(`✅ تم تحديث وتعديل عرض السعر بنجاح برقم: ${quoteResult.quoteNumber}`);
       } else {
@@ -537,7 +539,9 @@ export default function QuotesPage() {
           body: JSON.stringify(payload),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "فشل حفظ عرض السعر");
+        if (!res.ok) {
+          throw new Error(data.details ? `${data.error}: ${data.details}` : (data.error || "فشل حفظ عرض السعر"));
+        }
 
       // Auto-save client to CRM
       if (autoSaveCustomer && clientName.trim() && clientPhone.trim()) {

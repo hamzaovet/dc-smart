@@ -72,8 +72,29 @@ export async function POST(req: Request) {
 
     // Generate unique sequential quote number (e.g. QT-2026-0001)
     const currentYear = new Date().getFullYear();
-    const count = await prisma.quote.count();
-    const quoteNumber = `QT-${currentYear}-${String(count + 1).padStart(4, "0")}`;
+    const yearPrefix = `QT-${currentYear}-`;
+    const quotesThisYear = await prisma.quote.findMany({
+      where: { quoteNumber: { startsWith: yearPrefix } },
+      select: { quoteNumber: true },
+    });
+
+    let maxSeq = 0;
+    for (const q of quotesThisYear) {
+      const suffix = q.quoteNumber.replace(yearPrefix, "");
+      const parsed = parseInt(suffix, 10);
+      if (!isNaN(parsed) && parsed > maxSeq) {
+        maxSeq = parsed;
+      }
+    }
+
+    let nextSeq = maxSeq + 1;
+    let quoteNumber = `${yearPrefix}${String(nextSeq).padStart(4, "0")}`;
+
+    // Safety loop to ensure absolute uniqueness against concurrent inserts
+    while (await prisma.quote.findUnique({ where: { quoteNumber } })) {
+      nextSeq++;
+      quoteNumber = `${yearPrefix}${String(nextSeq).padStart(4, "0")}`;
+    }
 
     const serializedItems = typeof items === "string" ? items : JSON.stringify(items || []);
 
