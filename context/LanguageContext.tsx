@@ -16,12 +16,12 @@ const translations: Record<Language, Record<string, string>> = {
   ar: {
     // Brand & Header
     store_name: "دي سي سمارت",
-    store_subname: "بوتيك الألعاب التركيبية والهدايا الترند",
+    store_subname: "للأنظمة الأمنية والمراقبة والتحكم الذكي",
     nav_home: "الرئيسية",
     nav_winter: "الأكثر طلباً 🔥",
     nav_all_perfumes: "جميع المنتجات",
-    nav_oud: "مكعبات نانو وبازل",
-    nav_testers: "بيدازلنج وكريستال",
+    nav_oud: "كاميرات مراقبة",
+    nav_testers: "أجهزة تسجيل",
     nav_card: "كارت المتجر",
     nav_download: "تحميل التطبيق",
     nav_dashboard: "لوحة التحكم",
@@ -33,7 +33,7 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Hero & Badges
     hero_title: "عالم من الإبداع، الكيوت، والمرح",
-    hero_subtitle: "اكتشف أروع ألعاب مكعبات النانو، أطقم البيدازلنج الكريستالية، منظمات الميك أب والمكتب، وعلب الهدايا والبليند بوكس الأكثر طلباً على تيك توك.",
+    hero_subtitle: "أحدث كاميرات المراقبة التلفزيونية بدقة 4K و Full Color الليلية، أجهزة تسجيل XVR و NVR، شبكات وكابلات معتمدة مع ضمان عامين كامل وخدمة التركيب والمعاينة في طنطا وكافة المحافظات.",
     hero_cta_winter: "تصفح الأكثر رواجاً 🔥",
     hero_cta_all: "استكشف الكتالوج الكامل",
     badge_original: "أصلي 100% معتمد",
@@ -57,7 +57,7 @@ const translations: Record<Language, Record<string, string>> = {
     details_season: "التصنيف",
     details_gender: "الفئة",
     details_longevity: "الفئة العمرية والصعوبة",
-    details_sillage: "التغليف والملحقات",
+    details_sillage: "المواصفات والضمان",
     details_price: "السعر",
     details_save: "وفر",
     details_in_stock: "متوفر بالمخزون جاهز للشحن فوراً",
@@ -70,8 +70,8 @@ const translations: Record<Language, Record<string, string>> = {
     // Filters & Tabs
     filter_all: "الكل",
     filter_winter: "🔥 الأكثر رواجاً",
-    filter_oud: "🧱 مكعبات نانو وبازل",
-    filter_french: "💎 بيدازلنج وكريستال",
+    filter_oud: "📹 كاميرات مراقبة",
+    filter_french: "📼 أجهزة تسجيل",
     filter_niche: "🎀 منظمات كيوت",
     filter_musk: "🎁 بليند بوكس وهدايا",
     sort_featured: "المقترحة",
@@ -105,7 +105,7 @@ const translations: Record<Language, Record<string, string>> = {
     guarantee_title: "ضمان دي سي سمارت المعتمد عامين",
     guarantee_inspection: "معاينة البوكس والتأكد من سلامة كافة القطع قبل الدفع والاستلام",
     guarantee_lasting: "خامات أصلية آمنة 100% مع كتالوجات وخطوات تركيب واضحة",
-    guarantee_shipping: "تغليف هدايا بينك أنيق وشحن سريع لكافة محافظات مصر",
+    guarantee_shipping: "معاينة مجانية وشحن وتركيب احترافي مع ضمان عامين استبدال فوري",
 
     // Auth & Dashboard
     login_title: "بوابة المالك والتشغيل",
@@ -148,7 +148,7 @@ const translations: Record<Language, Record<string, string>> = {
     
     // Hero & Badges
     hero_title: "Cute, Creative & Aesthetic Play",
-    hero_subtitle: "Explore high-precision nano building blocks, dazzling crystal bedazzle kits, kawaii organizers, and viral TikTok blind boxes.",
+    hero_subtitle: "Advanced 4K & Full-Color CCTV Surveillance Cameras, Smart XVR/NVR Recorders, Certified Networking Cables & Full 2-Year Warranty Solutions in Egypt.",
     hero_cta_winter: "Explore Trending Now 🔥",
     hero_cta_all: "View Full Catalog",
     badge_original: "100% Original Genuine",

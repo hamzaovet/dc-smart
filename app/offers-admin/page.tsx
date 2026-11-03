@@ -256,7 +256,7 @@ export default function OffersAdminPage() {
               </h1>
               <p className="text-xs text-zinc-400 mt-1">
                 إدارة حملات التخفيضات، خصومات النسبة، عروض 1+1 مجاناً، وباقات
-                الشتاء المجمعة
+                الباقات المجمعة وعروض التركيب
               </p>
             </div>
           </div>
@@ -546,7 +546,7 @@ export default function OffersAdminPage() {
                     <input
                       type="text"
                       required
-                      placeholder="مثال: خصم الشتاء الفاخر"
+                      placeholder="مثال: عرض باقة 4 كاميرات داهوا بالتركيب"
                       value={titleAr}
                       onChange={(e) => setTitleAr(e.target.value)}
                       className="w-full px-3 py-2 bg-zinc-950 border border-zinc-800 rounded-lg text-sm text-white focus:outline-none focus:border-pink-500"
@@ -616,7 +616,7 @@ export default function OffersAdminPage() {
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {[
                       "عرض خاص 🔥",
-                      "خصم الشتاء ❄️",
+                      "عرض الباقة المتكاملة 🛡️",
                       "1+1 مجاناً 🎁",
                       "عرض محدود ⏳",
                       "الأكثر طلباً ⭐",

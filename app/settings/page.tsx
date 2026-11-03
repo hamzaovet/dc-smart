@@ -226,7 +226,7 @@ export default function SettingsPage() {
           <div className="bg-[#0c0914] border border-cyan-500/20 rounded-2xl p-5 shadow-xl space-y-4">
             <h3 className="font-serif font-bold text-sm text-zinc-100 flex items-center gap-2 border-b border-zinc-800 pb-3">
               <MapPin size={17} className="text-cyan-400" />
-              <span>عنوان البوتيك ورابط الموقع على خرائط جوجل (Google Maps)</span>
+              <span>عنوان المقر الرئيسي ورابط الموقع على خرائط جوجل (Google Maps)</span>
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
@@ -329,7 +329,7 @@ export default function SettingsPage() {
                   type="text"
                   value={announcementAr}
                   onChange={(e) => setAnnouncementAr(e.target.value)}
-                  placeholder="✨ شحن مجاني للطلبات فوق 1500 ج.م + عينات مجانية فاخرة مع كل طلب ✨"
+                  placeholder="🛡️ ضمان عامين شامل استبدال فوري + معاينة مجانية وتركيب احترافي لكافة المنظومات 🛡️"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-cyan-500"
                 />
               </div>

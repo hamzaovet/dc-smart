@@ -36,7 +36,7 @@ export async function POST(req: Request) {
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim(),
         customerCity: customerCity || "القاهرة والجيزة",
-        customerAddress: customerAddress || "استلام مباشر من البوتيك",
+        customerAddress: customerAddress || "استلام مباشر من مقر الشركة",
         notes: notes || "",
         items: typeof items === "string" ? items : JSON.stringify(items),
         subtotal: Number(subtotal) || 0,

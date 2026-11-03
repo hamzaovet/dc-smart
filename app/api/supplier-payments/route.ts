@@ -59,7 +59,7 @@ export async function POST(req: Request) {
         data: {
           description: `سند صرف وسداد دفعة للمورد ${supplier.name} (${paymentNumber})`,
           amount: payVal,
-          category: "خامات وزيوت",
+          category: "كاميرات وأجهزة تسجيل",
           recordedBy: recordedBy || "المايسترو",
         },
       });

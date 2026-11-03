@@ -160,7 +160,7 @@ export default function CheckoutPage() {
         <h2 className="font-serif font-bold text-xl text-zinc-200 mb-2">{t("cart_empty")}</h2>
         <p className="text-xs text-zinc-400 mb-6 max-w-sm">
           {isAr
-            ? "تصفح أحدث ألعاب النانو والبيدازلنج والمنظمات والهدايا الكيوت وأضف منتجاتك المفضلة للمتابعة."
+            ? "تصفح أحدث كاميرات المراقبة وأجهزة التسجيل ومهمات الشبكات وأضف متطلباتك للمتابعة والتركيب."
             : "Browse our collections and select your favorite cute items and kits."}
         </p>
         <Link href="/#all-perfumes" className="px-6 py-3 rounded-xl btn-pink text-sm font-bold">
@@ -269,7 +269,7 @@ export default function CheckoutPage() {
                 type="text"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder={isAr ? "مثال: الاستلام بعد الساعة 4 عصراً، أو تغليف كهدية خاصة في بوكس بينك..." : "Special instructions..."}
+                placeholder={isAr ? "مثال: الاستلام بعد الساعة 4 عصراً، أو طلب فني متخصص للمعاينة والتركيب..." : "Special installation or delivery instructions..."}
                 className="w-full py-2.5 px-4 rounded-xl bg-zinc-900 border border-zinc-700/80 focus:border-pink-400 text-xs text-zinc-100 outline-none transition"
               />
             </div>

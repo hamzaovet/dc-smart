@@ -996,7 +996,7 @@ export default function MenuAdminPage() {
             <div className="flex items-center justify-between pb-3 border-b border-zinc-800 mb-4">
               <h3 className="text-base font-bold text-cyan-300 font-serif flex items-center gap-2">
                 <FolderTree size={18} />
-                <span>{editingCategory ? "تعديل بيانات القسم" : "إضافة قسم جديد لمتجر روفي"}</span>
+                <span>{editingCategory ? "تعديل بيانات القسم" : "إضافة قسم جديد لكتالوج دي سي سمارت"}</span>
               </h3>
               <button
                 onClick={() => setIsCatModalOpen(false)}

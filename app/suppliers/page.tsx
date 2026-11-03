@@ -1000,7 +1000,7 @@ export default function SuppliersPage() {
               </div>
 
               <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-pink-500/20 text-zinc-300 flex justify-between items-center">
-                <span>المبلغ المتبقي كدين على البوتيك للمورد:</span>
+                <span>المبلغ المتبقي كدين على الشركة للمورد:</span>
                 <span className="font-mono font-black text-cyan-400">
                   {Math.max(0, (Number(invTotal) || 0) - (Number(invPaid) || 0))} ج.م
                 </span>

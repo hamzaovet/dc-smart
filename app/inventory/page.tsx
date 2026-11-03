@@ -42,7 +42,7 @@ export default function InventoryPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [savingItem, setSavingItem] = useState(false);
   const [name, setName] = useState("");
-  const [category, setCategory] = useState("زجاجات فاخرة");
+  const [category, setCategory] = useState("كاميرات مراقبة");
   const [quantity, setQuantity] = useState("50");
   const [unit, setUnit] = useState("قطعة");
   const [minStock, setMinStock] = useState("20");
@@ -159,26 +159,26 @@ export default function InventoryPage() {
 
   const categoriesList = [
     "الكل",
-    "زجاجات فاخرة",
+    "كاميرات مراقبة",
+    "أجهزة تسجيل XVR و NVR",
+    "كابلات شبكات ومحاور",
+    "هارد ديسك وتخزين",
     "باور سبلاي ومحولات",
-    "كاميرات مراقبة وأجهزة XVR",
-    "كحول نقي",
-    "تغليف وبوكسات",
-    "عينات وتسترات",
+    "راكات ومستلزمات تجميع",
   ];
 
   return (
     <ErpLayout activeItem="inventory">
       <div className="space-y-6">
         {/* Header Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-zinc-900/80 border border-pink-500/20 p-5 rounded-2xl shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-zinc-900/80 border border-cyan-500/20 p-5 rounded-2xl shadow-xl">
           <div className="flex items-center gap-3">
-            <span className="p-2.5 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-400">
+            <span className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
               <Package size={22} />
             </span>
             <div>
-              <h1 className="text-xl font-black font-serif text-pink-gradient">
-                المخزون والمشتريات وتوريد الزيوت والزجاجات
+              <h1 className="text-xl font-black font-serif text-cyan-400 font-bold">
+                المخزون وحركة الأصناف وتجهيزات الأنظمة الأمنية
               </h1>
               <p className="text-xs text-zinc-400 mt-0.5">
                 متابعة أرصدة الكاميرات، أجهزة التسجيل، كابلات الشبكات والمحاور، وحدات التخزين، ومهمات التركيب والباور سبلاي
@@ -200,19 +200,19 @@ export default function InventoryPage() {
 
         {/* Metrics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-[#0e0b16] border border-pink-500/20 p-4 rounded-2xl flex items-center justify-between">
+          <div className="bg-[#0e0b16] border border-cyan-500/20 p-4 rounded-2xl flex items-center justify-between">
             <div>
               <span className="text-[11px] text-zinc-400">إجمالي الأصناف بالمخزن</span>
               <div className="font-serif font-black text-2xl text-zinc-100 mt-1">
                 {items.length} صنف
               </div>
             </div>
-            <div className="p-3 rounded-xl bg-pink-500/10 text-pink-400">
+            <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400">
               <Package size={24} />
             </div>
           </div>
 
-          <div className="bg-[#0e0b16] border border-pink-500/20 p-4 rounded-2xl flex items-center justify-between">
+          <div className="bg-[#0e0b16] border border-cyan-500/20 p-4 rounded-2xl flex items-center justify-between">
             <div>
               <span className="text-[11px] text-zinc-400">أصناف قاربت على النفاد</span>
               <div
@@ -234,14 +234,14 @@ export default function InventoryPage() {
             </div>
           </div>
 
-          <div className="bg-[#0e0b16] border border-pink-500/20 p-4 rounded-2xl flex items-center justify-between">
+          <div className="bg-[#0e0b16] border border-cyan-500/20 p-4 rounded-2xl flex items-center justify-between">
             <div>
               <span className="text-[11px] text-zinc-400">القيمة التقديرية للمخزون</span>
-              <div className="font-serif font-black text-2xl text-pink-gradient mt-1">
+              <div className="font-serif font-black text-2xl text-cyan-400 font-bold mt-1">
                 {totalValue.toLocaleString()} ج.م
               </div>
             </div>
-            <div className="p-3 rounded-xl bg-pink-500/10 text-pink-400">
+            <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400">
               <DollarSign size={24} />
             </div>
           </div>
@@ -256,7 +256,7 @@ export default function InventoryPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="البحث باسم الصنف أو المورد..."
-              className="w-full pr-10 pl-4 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-pink-500"
+              className="w-full pr-10 pl-4 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-cyan-500"
             />
           </div>
 
@@ -282,7 +282,7 @@ export default function InventoryPage() {
 
         {/* Inventory Items Table */}
         {loading ? (
-          <div className="py-20 text-center text-pink-400">
+          <div className="py-20 text-center text-cyan-400">
             <RefreshCw size={28} className="animate-spin mx-auto mb-2" />
             <span className="text-xs">جاري تحميل سجلات المخزون...</span>
           </div>
@@ -291,7 +291,7 @@ export default function InventoryPage() {
             لا توجد أصناف مخزنية مطابقة
           </div>
         ) : (
-          <div className="bg-[#0c0914] border border-pink-500/20 rounded-2xl overflow-hidden shadow-xl">
+          <div className="bg-[#0c0914] border border-cyan-500/20 rounded-2xl overflow-hidden shadow-xl">
             <div className="overflow-x-auto">
               <table className="w-full text-right text-xs">
                 <thead className="bg-zinc-900/90 text-zinc-400 border-b border-zinc-800 text-[11px] font-bold">
@@ -336,7 +336,7 @@ export default function InventoryPage() {
                         <td className="py-3 px-4">
                           <span
                             className={`font-mono font-black text-sm ${
-                              isLow ? "text-red-400" : "text-pink-400"
+                              isLow ? "text-red-400" : "text-cyan-400"
                             }`}
                           >
                             {item.quantity} {item.unit}
@@ -371,7 +371,7 @@ export default function InventoryPage() {
                             </button>
                             <button
                               onClick={() => handleQuickAdjust(item.id, 10)}
-                              className="px-2 py-1 rounded bg-pink-500/20 hover:bg-pink-500/30 text-pink-400 text-[10px] font-bold border border-pink-500/30"
+                              className="px-2 py-1 rounded bg-pink-500/20 hover:bg-pink-500/30 text-cyan-400 text-[10px] font-bold border border-cyan-500/30"
                               title="إضافة 10 وحدات"
                             >
                               +10
@@ -408,7 +408,7 @@ export default function InventoryPage() {
       {/* Add Item Modal */}
       {isAddOpen && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#120e1c] border border-pink-500/30 rounded-2xl p-6 shadow-2xl relative text-xs">
+          <div className="w-full max-w-md bg-[#120e1c] border border-cyan-500/30 rounded-2xl p-6 shadow-2xl relative text-xs">
             <div className="flex items-center justify-between pb-3 border-b border-zinc-800 mb-4">
               <h3 className="text-base font-bold text-pink-300 font-serif flex items-center gap-2">
                 <Package size={18} />
@@ -430,8 +430,8 @@ export default function InventoryPage() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="مثال: زجاجات كريستال 100 مل / زيت توم فورد خام"
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-pink-500"
+                  placeholder="مثال: كاميرا داهوا خارجي 2 ميجا / هارد 1 تيرا سيجيت / لفة سلك 305 متر"
+                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
@@ -443,12 +443,12 @@ export default function InventoryPage() {
                     onChange={(e) => setCategory(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                   >
-                    <option value="زجاجات فاخرة">زجاجات فاخرة</option>
-                    <option value="باور سبلاي ومحولات">باور سبلاي ومحولات</option>
-                    <option value="كاميرات مراقبة وأجهزة XVR">كاميرات مراقبة وأجهزة تسجيل XVR/NVR</option>
-                    <option value="كحول نقي">كحول نقي</option>
-                    <option value="تغليف وبوكسات">تغليف وبوكسات</option>
-                    <option value="عينات وتسترات">عينات وتسترات</option>
+                    <option value="كاميرات مراقبة">كاميرات مراقبة (داهوا / هيكفيجن / يوني آرك)</option>
+                    <option value="أجهزة تسجيل XVR و NVR">أجهزة تسجيل XVR و NVR</option>
+                    <option value="كابلات شبكات ومحاور">كابلات شبكات ومحاور ووصلات BNC</option>
+                    <option value="هارد ديسك وتخزين">هارد ديسك وتخزين وراكات تجميع RACK</option>
+                    <option value="باور سبلاي ومحولات">باور سبلاي ومحولات ومستلزمات كهرباء</option>
+                    <option value="راكات ومستلزمات تجميع">راكات ومستلزمات تجميع وشاشات</option>
                   </select>
                 </div>
                 <div>

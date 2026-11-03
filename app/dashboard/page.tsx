@@ -62,7 +62,7 @@ interface Order {
 const STATUS_TABS = [
   { id: "active", label: "النشطة" },
   { id: "PENDING", label: "جديد" },
-  { id: "CONFIRMED", label: "قيد التجهيز والتغليف" },
+  { id: "CONFIRMED", label: "قيد التجهيز الفني والبرمجة" },
   { id: "READY", label: "جاهز للتسليم" },
   { id: "SHIPPED", label: "مع المندوب" },
   { id: "DELIVERED", label: "تم التسليم والتحصيل" },
@@ -517,7 +517,7 @@ export default function DashboardOrdersPage() {
                           onClick={() => updateOrderStatus(order.id, "CONFIRMED")}
                           className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:brightness-110 text-white font-bold text-xs shadow-md transition"
                         >
-                          تجهيز وتغليف 🎁
+                          تجهيز واختبار 🛠️
                         </button>
                       )}
 

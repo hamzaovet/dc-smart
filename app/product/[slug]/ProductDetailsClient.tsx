@@ -64,7 +64,7 @@ export default function ProductDetailsClient({
     HIGH_COPY: {
       textAr: "تريند تيك توك الأكثر طلباً 🔥",
       textEn: "Viral TikTok Sensation 🔥",
-      descAr: "النسخة الأكثر رواجاً على منصات السوشيال ميديا وتيك توك بجودة فائقة وتغليف كيوت.",
+      descAr: "المنظومة الأكثر طلباً واعتماداً في الشركات والمحلات والمنازل بدقة وضوح فائقة وضمان عامين شامل.",
       descEn: "The viral aesthetic sensation trending across TikTok with premium finish and cute packaging.",
       color: "bg-rose-500/20 border-rose-500/40 text-rose-300",
     },

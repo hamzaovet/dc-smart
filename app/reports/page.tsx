@@ -200,7 +200,7 @@ export default function ReportsFinancePage() {
               {(report?.totalExpenses || 0).toLocaleString()} ج.م
             </div>
             <div className="text-[10px] text-zinc-500">
-              تغليف، زيوت، إعلانات، وشحن
+              مهمات، كابلات، انتقالات، ومعاينة
             </div>
           </div>
 
@@ -386,7 +386,7 @@ export default function ReportsFinancePage() {
                   required
                   value={desc}
                   onChange={(e) => setDesc(e.target.value)}
-                  placeholder="مثال: كرتونة زجاجات كريستال / شحن بوسطة / إعلانات تيك توك"
+                  placeholder="مثال: أدوات ومهمات تركيب / كابلات إضافية / مصاريف فنيين وانتقالات"
                   className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-pink-500"
                 />
               </div>
@@ -410,9 +410,9 @@ export default function ReportsFinancePage() {
                     onChange={(e) => setCategory(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                   >
-                    <option value="تغليف وبوكسات">تغليف وبوكسات</option>
+                    <option value="مهمات ومستلزمات تركيب">مهمات ومستلزمات تركيب</option>
                     <option value="شحن وتوصيل">شحن وتوصيل</option>
-                    <option value="خامات وزيوت">مستلزمات ومهمات تركيب</option>
+                    <option value="مهمات ومستلزمات تركيب">مهمات ومستلزمات تركيب</option>
                     <option value="إعلانات وتسويق">إعلانات وتسويق</option>
                     <option value="تشغيل ومصروفات">تشغيل ومصروفات عامة</option>
                   </select>

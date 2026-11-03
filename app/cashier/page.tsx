@@ -59,7 +59,7 @@ export default function CashierPage() {
   // Ticket State
   const [ticketItems, setTicketItems] = useState<TicketItem[]>([]);
   const [orderType, setOrderType] = useState<"pos" | "delivery" | "takeaway">("pos");
-  const [customerName, setCustomerName] = useState("عميل صالة البوتيك");
+  const [customerName, setCustomerName] = useState("عميل صالة العرض والمبيعات");
   const [customerPhone, setCustomerPhone] = useState("01000000000");
   const [customerAddress, setCustomerAddress] = useState("");
   const [customerCity, setCustomerCity] = useState("القاهرة");
@@ -134,10 +134,22 @@ export default function CashierPage() {
   const filteredProducts = useMemo(() => {
     return products.filter((prod) => {
       // Category filter
-      if (selectedCategory === "شتاء ❄️" && !prod.isWinter) return false;
-      if (selectedCategory === "تستر أصلي" && prod.type !== "TESTER") return false;
-      if (selectedCategory === "أصلي 100%" && prod.type !== "ORIGINAL") return false;
-      if (selectedCategory === "بدائل مستوحاة" && prod.type !== "INSPIRED") return false;
+      if (selectedCategory === "كاميرات مراقبة") {
+        const isCam = prod.nameAr.includes("كاميرا") || (prod.type || "").toLowerCase().includes("camera") || prod.type === "ORIGINAL";
+        if (!isCam) return false;
+      }
+      if (selectedCategory === "أجهزة تسجيل") {
+        const isRec = prod.nameAr.includes("تسجيل") || prod.nameAr.includes("XVR") || prod.nameAr.includes("NVR") || (prod.type || "").toLowerCase().includes("recorder") || prod.type === "TESTER";
+        if (!isRec) return false;
+      }
+      if (selectedCategory === "كابلات وتخزين") {
+        const isCab = prod.nameAr.includes("كابل") || prod.nameAr.includes("سلك") || prod.nameAr.includes("هارد") || prod.nameAr.includes("تيرابايت") || prod.nameAr.includes("card") || prod.type === "HIGH_COPY";
+        if (!isCab) return false;
+      }
+      if (selectedCategory === "باور وملحقات") {
+        const isPwr = prod.nameAr.includes("باور") || prod.nameAr.includes("محول") || prod.nameAr.includes("راك") || prod.nameAr.includes("جاك") || prod.nameAr.includes("bnc") || prod.type === "INSPIRED";
+        if (!isPwr) return false;
+      }
 
       // Search
       if (searchQuery.trim()) {
@@ -168,10 +180,10 @@ export default function CashierPage() {
     playSound("cash");
 
     const orderPayload = {
-      customerName: customerName.trim() || "عميل صالة البوتيك",
+      customerName: customerName.trim() || "عميل صالة العرض والمبيعات",
       customerPhone: customerPhone.trim() || "01000000000",
-      customerCity: orderType === "delivery" ? customerCity : "البوتيك الرئيسي",
-      customerAddress: orderType === "delivery" ? customerAddress : "استلام مباشر من البوتيك",
+      customerCity: orderType === "delivery" ? customerCity : "طنطا — المقر الرئيسي",
+      customerAddress: orderType === "delivery" ? customerAddress : "استلام مباشر من معرض الشركة",
       orderType,
       cashierName: currentUser?.name || "كاشير دي سي سمارت",
       notes: notes.trim(),
@@ -222,11 +234,11 @@ export default function CashierPage() {
         {/* LEFT / CENTER: Products Grid & Search */}
         <div className="flex-1 flex flex-col space-y-4 overflow-hidden">
           {/* Header Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-zinc-900/80 border border-pink-500/20 p-4 rounded-2xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-zinc-900/80 border border-cyan-500/20 p-4 rounded-2xl">
             <div>
-              <h1 className="text-lg font-black font-serif text-pink-gradient flex items-center gap-2">
-                <span>كاشير نقطة بيع المنتجات الفاخرة</span>
-                <span className="text-[11px] px-2 py-0.5 rounded-md bg-pink-500/20 text-pink-300 font-sans font-bold">
+              <h1 className="text-lg font-black font-serif text-cyan-400 font-bold flex items-center gap-2">
+                <span>كاشير نقطة بيع الأنظمة والمهمات الأمنية</span>
+                <span className="text-[11px] px-2 py-0.5 rounded-md bg-cyan-500/20 text-cyan-300 font-sans font-bold">
                   POS Retail
                 </span>
               </h1>
@@ -244,11 +256,11 @@ export default function CashierPage() {
                 }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
                   orderType === "pos"
-                    ? "bg-pink-500 text-black shadow-md"
+                    ? "bg-cyan-500 text-black shadow-md"
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
-                صالة البوتيك
+                صالة المعرض
               </button>
               <button
                 onClick={() => {
@@ -257,11 +269,11 @@ export default function CashierPage() {
                 }}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
                   orderType === "delivery"
-                    ? "bg-pink-500 text-black shadow-md"
+                    ? "bg-cyan-500 text-black shadow-md"
                     : "text-zinc-400 hover:text-white"
                 }`}
               >
-                شحن دليفري
+                توريد وشحن
               </button>
             </div>
           </div>
@@ -277,13 +289,13 @@ export default function CashierPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="البحث السريع باسم المنتج أو الماركة (مثال: نانو ليجو، بيدازلنج، بوكس ميكي، ستيكرات)..."
-                className="w-full pr-10 pl-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-pink-500"
+                placeholder="البحث السريع برقم الموديل أو الصنف (مثال: داهوا، هيكفيجن، كابل شبكات، باور سبلاي)..."
+                className="w-full pr-10 pl-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-cyan-500"
               />
             </div>
 
             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-              {["الكل", "شتاء ❄️", "أصلي 100%", "تستر أصلي", "بدائل مستوحاة"].map((cat) => (
+              {["الكل", "كاميرات مراقبة", "أجهزة تسجيل", "كابلات وتخزين", "باور وملحقات"].map((cat) => (
                 <button
                   key={cat}
                   onClick={() => {
@@ -292,7 +304,7 @@ export default function CashierPage() {
                   }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
                     selectedCategory === cat
-                      ? "bg-pink-500/20 text-pink-300 border border-pink-500/50"
+                      ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/50"
                       : "bg-zinc-900/60 text-zinc-400 hover:text-zinc-200 border border-zinc-800"
                   }`}
                 >
@@ -305,7 +317,7 @@ export default function CashierPage() {
           {/* Perfumes Grid */}
           <div className="flex-1 overflow-y-auto pr-1">
             {loading ? (
-              <div className="py-20 text-center text-pink-400">
+              <div className="py-20 text-center text-cyan-400">
                 <RefreshCw size={28} className="animate-spin mx-auto mb-2" />
                 <span className="text-xs">جاري تحميل كتالوج المنتجات...</span>
               </div>
@@ -319,7 +331,7 @@ export default function CashierPage() {
                   <div
                     key={product.id}
                     onClick={() => handleAddItem(product)}
-                    className="group bg-[#0e0b16] rounded-2xl border border-pink-500/20 hover:border-pink-500/60 hover:shadow-xl hover:shadow-amber-500/10 p-3 flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden"
+                    className="group bg-[#0e0b16] rounded-2xl border border-cyan-500/20 hover:border-cyan-500/60 hover:shadow-xl hover:shadow-amber-500/10 p-3 flex flex-col justify-between transition-all cursor-pointer relative overflow-hidden"
                   >
                     {/* Thumbnail & Badges */}
                     <div className="relative aspect-square w-full rounded-xl overflow-hidden bg-zinc-900 mb-2">
@@ -328,18 +340,18 @@ export default function CashierPage() {
                         alt={product.nameAr}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
-                      <span className="absolute top-1.5 right-1.5 text-[9px] px-1.5 py-0.5 rounded-md font-bold bg-black/70 text-pink-400 backdrop-blur-sm border border-pink-500/30">
+                      <span className="absolute top-1.5 right-1.5 text-[9px] px-1.5 py-0.5 rounded-md font-bold bg-black/70 text-cyan-400 backdrop-blur-sm border border-pink-500/30">
                         {product.volume}
                       </span>
                       {product.isWinter && (
                         <span className="absolute top-1.5 left-1.5 text-[9px] px-1.5 py-0.5 rounded-md font-bold bg-cyan-900/70 text-cyan-300 backdrop-blur-sm">
-                          ❄️ شتاء
+                          🛡️ ضمان عامين
                         </span>
                       )}
                     </div>
 
                     <div>
-                      <div className="text-[10px] text-pink-500/90 font-serif font-bold truncate">
+                      <div className="text-[10px] text-cyan-400/90 font-serif font-bold truncate">
                         {product.brandAr}
                       </div>
                       <div className="font-bold text-xs text-zinc-200 line-clamp-2 leading-snug mt-0.5">
@@ -348,12 +360,12 @@ export default function CashierPage() {
                     </div>
 
                     <div className="flex items-center justify-between mt-3 pt-2 border-t border-zinc-800">
-                      <span className="font-serif font-black text-sm text-pink-gradient">
+                      <span className="font-serif font-black text-sm text-cyan-400 font-bold">
                         {product.price} ج.م
                       </span>
                       <button
                         type="button"
-                        className="w-7 h-7 rounded-lg bg-pink-500/20 text-pink-400 group-hover:bg-pink-500 group-hover:text-black flex items-center justify-center transition-colors"
+                        className="w-7 h-7 rounded-lg bg-pink-500/20 text-cyan-400 group-hover:bg-pink-500 group-hover:text-black flex items-center justify-center transition-colors"
                       >
                         <Plus size={15} />
                       </button>
@@ -370,11 +382,11 @@ export default function CashierPage() {
           {/* Ticket Header */}
           <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
             <div className="flex items-center gap-2">
-              <ShoppingCart size={18} className="text-pink-400" />
+              <ShoppingCart size={18} className="text-cyan-400" />
               <span className="font-bold font-serif text-sm text-zinc-100">
                 فاتورة البيع الحالية
               </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-400 font-mono font-bold">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-500/20 text-cyan-400 font-mono font-bold">
                 {ticketItems.length}
               </span>
             </div>
@@ -465,7 +477,7 @@ export default function CashierPage() {
                       >
                         <Minus size={12} />
                       </button>
-                      <span className="w-5 text-center font-mono font-bold text-xs text-pink-400">
+                      <span className="w-5 text-center font-mono font-bold text-xs text-cyan-400">
                         {item.quantity}
                       </span>
                       <button
@@ -509,7 +521,7 @@ export default function CashierPage() {
                     }}
                     className={`py-1.5 rounded-lg transition text-center ${
                       paymentMethod === pm.id
-                        ? "bg-pink-500 text-black font-black shadow-md"
+                        ? "bg-cyan-500 text-black font-black shadow-md"
                         : "bg-zinc-900 text-zinc-400 hover:text-zinc-200 border border-zinc-800"
                     }`}
                   >
@@ -533,7 +545,7 @@ export default function CashierPage() {
               )}
               <div className="flex justify-between items-center text-sm font-black pt-2 border-t border-zinc-800">
                 <span className="text-zinc-200">الإجمالي النهائي:</span>
-                <span className="font-serif text-lg text-pink-gradient">{totalAmount} ج.م</span>
+                <span className="font-serif text-lg text-cyan-400 font-bold">{totalAmount} ج.م</span>
               </div>
             </div>
 

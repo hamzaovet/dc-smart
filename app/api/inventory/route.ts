@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     const item = await prisma.inventoryItem.create({
       data: {
         name,
-        category: category || "زجاجات فاخرة",
+        category: category || "كاميرات مراقبة",
         quantity: Number(quantity) || 0,
         unit: unit || "قطعة",
         minStock: Number(minStock) || 10,

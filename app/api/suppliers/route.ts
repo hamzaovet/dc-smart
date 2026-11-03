@@ -45,7 +45,7 @@ export async function POST(req: Request) {
         name: name.trim(),
         phone: phone.trim(),
         company: company ? company.trim() : null,
-        category: category || "خامات وزيوت",
+        category: category || "كاميرات وأجهزة تسجيل",
         address: address ? address.trim() : null,
         openingBalance: openBal,
         totalPurchases: 0,

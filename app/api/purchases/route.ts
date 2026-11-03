@@ -93,7 +93,7 @@ export async function POST(req: Request) {
             await prisma.inventoryItem.create({
               data: {
                 name: item.name,
-                category: item.category || "خامات وزيوت",
+                category: item.category || "كاميرات وأجهزة تسجيل",
                 quantity: qty,
                 unit: item.unit || "قطعة",
                 minStock: 10,
@@ -115,7 +115,7 @@ export async function POST(req: Request) {
           data: {
             description: `سداد مشتريات للمورد ${supplier.name} (فاتورة #${invoiceNumber})`,
             amount: paid,
-            category: "خامات وزيوت",
+            category: "كاميرات وأجهزة تسجيل",
             recordedBy: recordedBy || "المايسترو",
           },
         });
