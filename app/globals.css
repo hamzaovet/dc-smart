@@ -1,0 +1,81 @@
+@import "tailwindcss";
+@source "../app";
+@source "../components";
+@source "../context";
+@source "../";
+
+@layer base {
+  :root {
+    --cyan-primary: #06b6d4;
+    --cyan-light: #cffafe;
+    --cyan-soft: #a5f3fc;
+    --cyan-dark: #0e7490;
+    --blue-accent: #2563eb;
+    --emerald-accent: #10b981;
+    --dark-surface: #080c14;
+    --dark-card: #0b1120;
+  }
+}
+
+body {
+  background-color: #080c14;
+  color: #f1f5f9;
+  font-family: 'Cairo', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
+  selection-background-color: #06b6d4;
+  selection-color: #000000;
+}
+
+/* Custom Cyan & Tech Gradients */
+.text-cyan-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #cffafe 30%, #38bdf8 70%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-silver-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 50%, #cbd5e1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Tech Glass Cards */
+.glass-luxury {
+  background: rgba(11, 17, 32, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+}
+
+.glass-luxury:hover {
+  border-color: rgba(6, 182, 212, 0.45);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080c14;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #06b6d4;
+}
+
+/* Print Styles for Official Quotes and Receipts */
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

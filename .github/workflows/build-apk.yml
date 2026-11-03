@@ -1,0 +1,99 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Release DC Smart APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install Node Dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Sync Capacitor Android
+        run: npx cap sync android
+
+      - name: Make Gradlew Executable
+        run: |
+          cd android
+          chmod +x gradlew
+
+      - name: Build Debug APK & Prepare Asset
+        run: |
+          cd android
+          ./gradlew assembleDebug --no-daemon --stacktrace
+          cd ..
+          mkdir -p dist-apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist-apk/dcsmart.apk
+          mkdir -p public/downloads
+          cp dist-apk/dcsmart.apk public/downloads/dcsmart.apk
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dcsmart-apk
+          path: dist-apk/dcsmart.apk
+          if-no-files-found: error
+
+      - name: Create or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v1.0.0"
+          name: "دي سي سمارت — تطبيق الأندرويد الرسمي"
+          draft: false
+          prerelease: false
+          make_latest: true
+          body: |
+            ## 🛡️ تطبيق دي سي سمارت (DC Smart) الرسمي للأندرويد
+            
+            أهلاً بكم في تطبيق **دي سي سمارت (DC Smart) — أنظمة المراقبة والتحكم الذكي وحلول التكنولوجيا الأمنية** الرسمي للأندرويد!
+            
+            ### 📹 مميزات التطبيق:
+            - تصفح كتالوج كاميرات المراقبة، أجهزة التسجيل XVR و NVR، والشاشات، والإكسسوارات.
+            - معاينة المواصفات الفنية، دقة التصوير، الرؤية الليلية بالألوان الكاملة، والمايك المدمج.
+            - طلب معاينة وعرض سعر فوري أو شراء مباشر والدفع عند الاستلام مع المعاينة.
+            - شحن سريع لطنطا وكافة محافظات مصر وخدمات تركيب وضمان معتمدة.
+            
+            ### 📲 طريقة التثبيت:
+            1. اضغط على رابط التحميل بالأسفل `dcsmart.apk`.
+            2. افتح الملف واختر **تثبيت (Install)**.
+            3. التطبيق مستقل ومخصص لمتجر دي سي سمارت (`com.dcsmart.app`).
+          files: dist-apk/dcsmart.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Commit and Push APK to Repo
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add public/downloads/dcsmart.apk
+          git commit -m "chore(apk): update official dcsmart.apk build [skip ci]" || echo "No changes"
+          git push origin main || echo "Push skipped"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

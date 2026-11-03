@@ -1,0 +1,552 @@
+datasource db {
+  provider = "postgresql"
+}
+
+
+
+generator client {
+
+  provider = "prisma-client-js"
+
+  output   = "../lib/generated/client"
+
+}
+
+
+
+model User {
+
+  id        String   @id @default(cuid())
+
+  username  String   @unique
+
+  password  String
+
+  pin       String
+
+  name      String
+
+  role      String   @default("manager") // owner, manager, staff
+
+  phone     String?
+
+  avatar    String?
+
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+
+  updatedAt DateTime @updatedAt
+
+}
+
+
+
+model StoreSettings {
+  id                    String   @id @default("rovy_settings")
+  isEmergencyLockdown   Boolean  @default(false)
+  storeNameAr           String   @default("روفي ستور — للعطور الفاخرة")
+  storeNameEn           String   @default("Rovy Store — Luxury Fragrances")
+  taglineAr             String   @default("أفخم العطور العالمية والبدائل المستوحاة بثبات وأصالة لا تُقاوم")
+  taglineEn             String   @default("Ultra-luxury designer & inspired niche fragrances")
+  whatsappPhone         String   @default("01503012856")
+  hotline               String   @default("01503012856")
+  secondaryPhone        String?  @default("01556718249")
+  googleMapsUrl         String?  @default("https://maps.app.goo.gl/z2QCHZzSuJaaNHPV7")
+  deliveryFee           Float    @default(50.0)
+  freeShippingThreshold Float    @default(1500.0)
+  addressAr             String   @default("6 أكتوبر — الحي الرابع (شارع مجلس الدولة) — الجيزة")
+  addressEn             String   @default("6th of October — 4th District (Council of State St) — Giza")
+  workingHoursAr        String   @default("يومياً من 10 صباحاً وحتى 12 منتصف الليل")
+  workingHoursEn        String   @default("Daily from 10:00 AM to 12:00 Midnight")
+  instagramHandle       String   @default("rovystore2")
+  announcementAr        String   @default("✨ شحن مجاني للطلبات فوق 1500 ج.م + عينات مجانية فاخرة مع كل طلب ✨")
+  announcementEn        String   @default("✨ Free shipping on orders over 1500 EGP + complimentary luxury samples with every order ✨")
+  updatedAt             DateTime @updatedAt
+}
+
+
+
+model Category {
+
+  id            String    @id @default(cuid())
+
+  nameAr        String    @unique
+
+  nameEn        String
+
+  slug          String    @unique
+
+  descriptionAr String?
+
+  descriptionEn String?
+
+  image         String?
+
+  icon          String?
+
+  sortOrder     Int       @default(0)
+
+  products      Product[]
+
+  createdAt     DateTime  @default(now())
+
+}
+
+
+
+model Product {
+
+  id              String   @id @default(cuid())
+
+  nameAr          String
+
+  nameEn          String
+
+  slug            String   @unique
+
+  brandAr         String
+
+  brandEn         String
+
+  type            String   @default("ORIGINAL") // ORIGINAL (أصلي 100%), TESTER (تيستر أصلي), HIGH_COPY (ماستر كوبي), INSPIRED (بديل مستوحى)
+
+  concentration   String   @default("Eau de Parfum") // Eau de Parfum, Extrait de Parfum, Eau de Toilette
+
+  volume          String   @default("100 ml") // 50 ml, 100 ml, 200 ml
+
+  price           Float
+
+  originalPrice   Float?
+
+  discountPercent Int      @default(0)
+
+  isFeatured      Boolean  @default(false)
+
+  isWinter        Boolean  @default(false) // Winter Collection flag (like Zidances winter-1)
+
+  isBestSeller    Boolean  @default(false)
+
+  inStock         Boolean  @default(true)
+
+  stockQuantity   Int      @default(50)
+
+  rating          Float    @default(4.9)
+
+  reviewsCount    Int      @default(38)
+
+  descriptionAr   String   @db.Text
+
+  descriptionEn   String   @db.Text
+
+  topNotesAr      String   // النوتات الافتتاحية
+
+  topNotesEn      String
+
+  heartNotesAr    String   // قلب العطر
+
+  heartNotesEn    String
+
+  baseNotesAr     String   // قاعدة العطر
+
+  baseNotesEn     String
+
+  ingredientsAr   String?  @db.Text
+
+  ingredientsEn   String?  @db.Text
+
+  seasonAr        String   @default("كل الفصول") // شتوي / صيفي / خريفي / كل الفصول
+
+  seasonEn        String   @default("All Seasons")
+
+  genderAr        String   @default("للجنسين") // رجالي / نسائي / للجنسين
+
+  genderEn        String   @default("Unisex")
+
+  longevityAr     String   @default("ثبات يدوم أكثر من 24 ساعة")
+
+  longevityEn     String   @default("24+ Hours Long Lasting")
+
+  sillageAr       String   @default("فوحان قوي جداً يملأ المكان")
+
+  sillageEn       String   @default("Enormous Sillage & Projection")
+
+  image           String
+
+  gallery         String?  @db.Text // JSON string of gallery images
+
+  categoryId      String
+
+  category        Category @relation(fields: [categoryId], references: [id])
+
+  createdAt       DateTime @default(now())
+
+  updatedAt       DateTime @updatedAt
+
+}
+
+
+
+model Order {
+
+  id              String   @id @default(cuid())
+
+  orderNumber     String   @unique
+
+  customerName    String
+
+  customerPhone   String
+
+  customerAddress String
+
+  customerCity    String
+
+  notes           String?
+
+  items           String   @db.Text // JSON string of cart items
+
+  subtotal        Float
+
+  deliveryFee     Float    @default(50.0)
+
+  totalAmount     Float
+
+  status          String   @default("PENDING") // PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELLED
+
+  paymentMethod   String   @default("COD") // COD (دفع عند الاستلام), INSTAPAY, VODAFONE_CASH
+
+  trackingNumber  String?
+
+  orderType       String   @default("web") // web, pos, takeaway, phone
+
+  cashierName     String?
+
+  courierName     String?
+
+  courierPhone    String?
+
+  createdAt       DateTime @default(now())
+
+  updatedAt       DateTime @updatedAt
+
+}
+
+
+
+model Expense {
+
+  id          String   @id @default(cuid())
+
+  description String
+
+  amount      Float
+
+  category    String   // تغليف وبوكسات، شحن وتوصيل، خامات وزيوت، إعلانات وتسويق، تشغيل ومصروفات
+
+  expenseDate DateTime @default(now())
+
+  recordedBy  String?
+
+  createdAt   DateTime @default(now())
+
+}
+
+
+
+model InventoryItem {
+
+  id          String   @id @default(cuid())
+
+  name        String
+
+  category    String   // زجاجات فاخرة، بخاخات، زيوت عطرية، كحول نقي، بوكسات وتغليف، عينات هدايا
+
+  quantity    Int      @default(0)
+
+  unit        String   @default("قطعة") // قطعة، مل، لتر، كرتونة، جرام
+
+  minStock    Int      @default(10)
+
+  costPerUnit Float    @default(0.0)
+
+  supplier    String?
+
+  createdAt   DateTime @default(now())
+
+  updatedAt   DateTime @updatedAt
+
+}
+
+
+
+model Customer {
+
+  id            String    @id @default(cuid())
+
+  name          String
+
+  phone         String    @unique
+
+  email         String?
+
+  city          String?
+
+  address       String?
+
+  totalOrders   Int       @default(0)
+
+  totalSpent    Float     @default(0.0)
+
+  isVip         Boolean   @default(false)
+
+  notes         String?
+
+  lastOrderDate DateTime?
+
+  createdAt     DateTime  @default(now())
+
+  updatedAt     DateTime  @updatedAt
+
+}
+
+
+
+model Review {
+
+  id           String   @id @default(cuid())
+
+  productId    String?
+
+  customerName String
+
+  rating       Int      @default(5)
+
+  comment      String
+
+  city         String?
+
+  isVerified   Boolean  @default(true)
+
+  createdAt    DateTime @default(now())
+
+}
+
+model SalesReturn {
+
+  id            String   @id @default(cuid())
+
+  returnNumber  String   @unique // e.g. RET-SALES-1001
+
+  orderId       String?
+
+  orderNumber   String?
+
+  customerName  String
+
+  customerPhone String
+
+  items         String   @db.Text // JSON items returned
+
+  totalRefund   Float
+
+  refundMethod  String   @default("CASH") // CASH, INSTAPAY, STORE_CREDIT
+
+  reason        String
+
+  restockItems  Boolean  @default(true)
+
+  recordedBy    String?
+
+  status        String   @default("COMPLETED")
+
+  notes         String?
+
+  createdAt     DateTime @default(now())
+
+}
+
+
+
+model Supplier {
+
+  id             String            @id @default(cuid())
+
+  name           String
+
+  phone          String
+
+  company        String?
+
+  category       String            @default("خامات وزيوت") // زيوت عطرية، زجاجات وكريستال، بخاخات، كرتون وبوكسات، كحول
+
+  address        String?
+
+  openingBalance Float             @default(0.0) // رصيد بداية المدة
+
+  totalPurchases Float             @default(0.0)
+
+  totalPaid      Float             @default(0.0)
+
+  currentBalance Float             @default(0.0) // الرصيد الحالي المستحق
+
+  notes          String?
+
+  createdAt      DateTime          @default(now())
+
+  updatedAt      DateTime          @updatedAt
+
+  purchases      PurchaseInvoice[]
+
+  payments       SupplierPayment[]
+
+  returns        PurchaseReturn[]
+
+}
+
+
+
+model PurchaseInvoice {
+
+  id              String         @id @default(cuid())
+
+  invoiceNumber   String         @unique // e.g. PUR-2026-101
+
+  supplierId      String
+
+  supplier        Supplier       @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  items           String         @db.Text // JSON items
+
+  totalAmount     Float
+
+  paidAmount      Float          @default(0.0)
+
+  remainingAmount Float          @default(0.0)
+
+  paymentMethod   String         @default("CASH") // CASH, INSTAPAY, BANK_TRANSFER, DEFERRED
+
+  status          String         @default("COMPLETED")
+
+  notes           String?
+
+  recordedBy      String?
+
+  invoiceDate     DateTime       @default(now())
+
+  createdAt       DateTime       @default(now())
+
+}
+
+
+
+model SupplierPayment {
+
+  id            String   @id @default(cuid())
+
+  paymentNumber String   @unique // e.g. PAY-1001
+
+  supplierId    String
+
+  supplier      Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  amount        Float
+
+  paymentMethod String   @default("CASH") // CASH, INSTAPAY, BANK_TRANSFER
+
+  notes         String?
+
+  recordedBy    String?
+
+  paymentDate   DateTime @default(now())
+
+  createdAt     DateTime @default(now())
+
+}
+
+
+
+model PurchaseReturn {
+
+  id           String   @id @default(cuid())
+
+  returnNumber String   @unique // e.g. RET-PUR-1001
+
+  supplierId   String
+
+  supplier     Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  items        String   @db.Text
+
+  totalRefund  Float
+
+  refundMethod String   @default("DEDUCT_BALANCE")
+
+  reason       String
+
+  notes        String?
+
+  recordedBy   String?
+
+  createdAt    DateTime @default(now())
+
+}
+
+
+
+model Promotion {
+
+  id                   String    @id @default(cuid())
+
+  titleAr              String
+
+  titleEn              String
+
+  type                 String    @default("PERCENTAGE") // PERCENTAGE, FIXED, BOGO, BUNDLE
+
+  discountValue        Float     @default(0.0)
+
+  badgeText            String?
+
+  applicableProductIds String?   @db.Text
+
+  startDate            DateTime?
+
+  endDate              DateTime?
+
+  isActive             Boolean   @default(true)
+
+  bannerImage          String?
+
+  descriptionAr        String?
+
+  descriptionEn        String?
+
+  createdAt            DateTime  @default(now())
+
+}
+
+
+
+model Quote {
+  id              String    @id @default(cuid())
+  quoteNumber     String    @unique // e.g. QT-2026-101
+  clientName      String
+  clientPhone     String
+  clientAddress   String?
+  clientCompany   String?
+  projectType     String    @default("محل / فيلّا / منزل")
+  items           String    @db.Text
+  subtotal        Float     @default(0.0)
+  installationFee Float     @default(0.0)
+  discount        Float     @default(0.0)
+  tax             Float     @default(0.0)
+  totalAmount     Float     @default(0.0)
+  warrantyPeriod  String    @default("ضمان شامل لمدة عامين على الكاميرات وأجهزة التسجيل")
+  terms           String?   @db.Text
+  status          String    @default("PENDING") // PENDING, ACCEPTED, REJECTED, EXPIRED
+  validUntil      DateTime?
+  notes           String?   @db.Text
+  createdBy       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}

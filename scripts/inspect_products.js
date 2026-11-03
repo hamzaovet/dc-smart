@@ -1,0 +1,14 @@
+const { Client } = require('pg');
+const client = new Client({
+  connectionString: 'postgresql://neondb_owner:npg_9rXC3GEyFUKx@ep-dry-recipe-baxh40lf.c-8.eu-central-1.aws.neon.tech/neondb?sslmode=require',
+  ssl: { rejectUnauthorized: false }
+});
+
+async function main() {
+  await client.connect();
+  const res = await client.query('SELECT id, "nameAr", "brandAr", price, image, "categoryId" FROM "Product"');
+  console.log(JSON.stringify(res.rows, null, 2));
+  await client.end();
+}
+
+main().catch(console.error);
