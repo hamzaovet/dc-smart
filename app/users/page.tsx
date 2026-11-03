@@ -88,8 +88,8 @@ export default function UsersTeamPage() {
   };
 
   const executeLockdown = async () => {
-    if (maestroPinInput.trim() !== "157230") {
-      setLockdownError("كود الأمان الخاص بالمايسترو غير صحيح! (PIN مطلوب)");
+    if (!maestroPinInput.trim()) {
+      setLockdownError("يرجى إدخال كود الأمان السري PIN الخاص بالمالك");
       playSound("alert");
       return;
     }
@@ -323,7 +323,7 @@ export default function UsersTeamPage() {
                       </td>
 
                       <td className="py-3.5 px-4 font-mono text-zinc-400">
-                        {isOwnerRow ? "•••••• (157230)" : "•••••• (445566)"}
+                        <span className="font-mono text-cyan-400 font-bold">•••••••• (محمي ومشفر 🔒)</span>
                       </td>
 
                       <td className="py-3.5 px-4">
@@ -361,7 +361,7 @@ export default function UsersTeamPage() {
               </h3>
             </div>
             <p className="text-zinc-300 text-xs mb-4 leading-relaxed">
-              يرجى إدخال كود الأمان السري للمايسترو <strong>(PIN: 157230)</strong> لتنفيذ أمر{" "}
+              يرجى إدخال كود الأمان السري للمايسترو لتأكيد تنفيذ أمر{" "}
               {isLockdown ? "إلغاء وضع الطوارئ" : "إغلاق وتعطيل كافة الحسابات فورياً"}.
             </p>
 
@@ -377,7 +377,7 @@ export default function UsersTeamPage() {
               maxLength={6}
               value={maestroPinInput}
               onChange={(e) => setMaestroPinInput(e.target.value)}
-              placeholder="أدخل الـ PIN السري (157230)"
+              placeholder="أدخل كود الأمان السري PIN"
               className="w-full px-3 py-2.5 rounded-xl bg-black border border-red-500/40 text-center font-mono text-base tracking-widest text-pink-400 focus:outline-none focus:border-red-500 mb-4"
             />
 
@@ -475,7 +475,7 @@ export default function UsersTeamPage() {
                     maxLength={6}
                     value={pin}
                     onChange={(e) => setPin(e.target.value)}
-                    placeholder="445566"
+                    placeholder="••••••"
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono"
                   />
                 </div>

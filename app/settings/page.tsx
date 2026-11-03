@@ -47,19 +47,19 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (settings) {
-      setStoreNameAr(settings.storeNameAr || "ميني بيك — بوتيك الألعاب التركيبية والهدايا الترند");
-      setStoreNameEn(settings.storeNameEn || "Mini Pick — Cute Aesthetic & Nano Blocks");
+      setStoreNameAr(settings.storeNameAr || "دي سي سمارت — لأنظمة المراقبة والتحكم الذكي");
+      setStoreNameEn(settings.storeNameEn || "DC Smart — Security Systems & Smart Technology");
       setTaglineAr(settings.taglineAr || "");
       setTaglineEn(settings.taglineEn || "");
-      setWhatsappPhone(settings.whatsappPhone || "01050757837");
-      setHotline(settings.hotline || "01050757837");
-      setSecondaryPhone(settings.secondaryPhone || "01069819381");
-      setGoogleMapsUrl(settings.googleMapsUrl || "https://maps.app.goo.gl/z2QCHZzSuJaaNHPV7");
-      setAddressAr(settings.addressAr || "طنطا — محافظة الغربية");
+      setWhatsappPhone(settings.whatsappPhone || "01008657085");
+      setHotline(settings.hotline || "01008657085");
+      setSecondaryPhone(settings.secondaryPhone || "01281248731");
+      setGoogleMapsUrl(settings.googleMapsUrl || "https://maps.google.com/?q=Tanta,Gharbia,Egypt");
+      setAddressAr(settings.addressAr || "طنطا — محافظة الغربية — جمهورية مصر العربية");
       setAddressEn(settings.addressEn || "Tanta — Gharbia Governorate, Egypt");
-      setWorkingHoursAr(settings.workingHoursAr || "يومياً من 10 صباحاً وحتى 12 منتصف الليل");
-      setWorkingHoursEn(settings.workingHoursEn || "Daily from 10:00 AM to 12:00 Midnight");
-      setInstagramHandle(settings.instagramHandle || "minipick.eg");
+      setWorkingHoursAr(settings.workingHoursAr || "يومياً من 9:00 صباحاً وحتى 11:00 مساءً");
+      setWorkingHoursEn(settings.workingHoursEn || "Daily from 9:00 AM to 11:00 PM");
+      setInstagramHandle(settings.instagramHandle || "dcsmart.eg");
       setAnnouncementAr(settings.announcementAr || "");
       setAnnouncementEn(settings.announcementEn || "");
       setDeliveryFee(settings.deliveryFee?.toString() || "50");
@@ -107,13 +107,13 @@ export default function SettingsPage() {
     <ErpLayout activeItem="settings">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-zinc-900/80 border border-pink-500/20 p-5 rounded-2xl shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-zinc-900/80 border border-cyan-500/20 p-5 rounded-2xl shadow-xl">
           <div className="flex items-center gap-3">
-            <span className="p-2.5 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-400">
+            <span className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
               <Settings size={22} />
             </span>
             <div>
-              <h1 className="text-xl font-black font-serif text-pink-gradient">
+              <h1 className="text-xl font-black font-serif text-cyan-400 font-bold">
                 إعدادات المتجر وبيانات الاتصال واللوكيشن
               </h1>
               <p className="text-xs text-zinc-400 mt-0.5">
@@ -142,9 +142,9 @@ export default function SettingsPage() {
 
         <form onSubmit={handleSave} className="space-y-6">
           {/* Section 1: Contact Numbers & WhatsApp */}
-          <div className="bg-[#0c0914] border border-pink-500/20 rounded-2xl p-5 shadow-xl space-y-4">
+          <div className="bg-[#0c0914] border border-cyan-500/20 rounded-2xl p-5 shadow-xl space-y-4">
             <h3 className="font-serif font-bold text-sm text-zinc-100 flex items-center gap-2 border-b border-zinc-800 pb-3">
-              <Phone size={17} className="text-pink-400" />
+              <Phone size={17} className="text-cyan-400" />
               <span>أرقام الهواتف وخدمة العملاء والواتساب الرسمية</span>
             </h3>
 
@@ -158,8 +158,8 @@ export default function SettingsPage() {
                   required
                   value={hotline}
                   onChange={(e) => setHotline(e.target.value)}
-                  placeholder="01050757837"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono focus:outline-none focus:border-pink-500"
+                  placeholder="01008657085"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono focus:outline-none focus:border-cyan-500"
                 />
                 <span className="text-[10.5px] text-zinc-500 mt-1 block">
                   يظهر في الترويسة العلوية وبند خدمة العملاء وفي الفواتير والكارت الرسمي.
@@ -174,8 +174,8 @@ export default function SettingsPage() {
                   type="text"
                   value={secondaryPhone}
                   onChange={(e) => setSecondaryPhone(e.target.value)}
-                  placeholder="01069819381"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono focus:outline-none focus:border-pink-500"
+                  placeholder="01281248731"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono focus:outline-none focus:border-cyan-500"
                 />
                 <span className="text-[10.5px] text-zinc-500 mt-1 block">
                   رقم احتياطي للعملاء واستقبال أي استفسارات أو أوردرات إضافية.
@@ -194,7 +194,7 @@ export default function SettingsPage() {
                   value={whatsappPhone}
                   onChange={(e) => setWhatsappPhone(e.target.value)}
                   placeholder="01050757837"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono focus:outline-none focus:border-pink-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono focus:outline-none focus:border-cyan-500"
                 />
                 <span className="text-[10.5px] text-zinc-500 mt-1 block">
                   ترسل له رسائل زر &quot;الطلب عبر واتساب&quot; وتفاصيل العطور تلقائياً.
@@ -203,7 +203,7 @@ export default function SettingsPage() {
 
               <div>
                 <label className="block text-zinc-300 font-medium mb-1 flex items-center gap-1.5">
-                  <InstagramIcon size={14} className="text-pink-400" />
+                  <InstagramIcon size={14} className="text-cyan-400" />
                   <span>معرف حساب إنستاجرام (Instagram Handle):</span>
                 </label>
                 <div className="flex items-center">
@@ -214,8 +214,8 @@ export default function SettingsPage() {
                     type="text"
                     value={instagramHandle}
                     onChange={(e) => setInstagramHandle(e.target.value)}
-                    placeholder="minipick.eg"
-                    className="w-full px-3.5 py-2.5 rounded-l-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono focus:outline-none focus:border-pink-500"
+                    placeholder="dcsmart.eg"
+                    className="w-full px-3.5 py-2.5 rounded-l-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono focus:outline-none focus:border-cyan-500"
                   />
                 </div>
               </div>
@@ -223,9 +223,9 @@ export default function SettingsPage() {
           </div>
 
           {/* Section 2: Address & Google Maps Details */}
-          <div className="bg-[#0c0914] border border-pink-500/20 rounded-2xl p-5 shadow-xl space-y-4">
+          <div className="bg-[#0c0914] border border-cyan-500/20 rounded-2xl p-5 shadow-xl space-y-4">
             <h3 className="font-serif font-bold text-sm text-zinc-100 flex items-center gap-2 border-b border-zinc-800 pb-3">
-              <MapPin size={17} className="text-pink-400" />
+              <MapPin size={17} className="text-cyan-400" />
               <span>عنوان البوتيك ورابط الموقع على خرائط جوجل (Google Maps)</span>
             </h3>
 
@@ -239,7 +239,7 @@ export default function SettingsPage() {
                   value={addressAr}
                   onChange={(e) => setAddressAr(e.target.value)}
                   placeholder="طنطا — محافظة الغربية"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-pink-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
@@ -252,7 +252,7 @@ export default function SettingsPage() {
                   value={addressEn}
                   onChange={(e) => setAddressEn(e.target.value)}
                   placeholder="Tanta — Gharbia Governorate, Egypt"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono focus:outline-none focus:border-pink-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono focus:outline-none focus:border-cyan-500"
                 />
               </div>
             </div>
@@ -265,7 +265,7 @@ export default function SettingsPage() {
                     href={googleMapsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-pink-400 hover:underline flex items-center gap-1 font-sans"
+                    className="text-cyan-400 hover:underline flex items-center gap-1 font-sans"
                   >
                     <span>فتح اللوكيشن</span>
                     <ExternalLink size={12} />
@@ -277,17 +277,17 @@ export default function SettingsPage() {
                 value={googleMapsUrl}
                 onChange={(e) => setGoogleMapsUrl(e.target.value)}
                 placeholder="https://maps.app.goo.gl/z2QCHZzSuJaaNHPV7"
-                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono focus:outline-none focus:border-pink-500"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono focus:outline-none focus:border-cyan-500"
               />
               <span className="text-[10.5px] text-zinc-500 mt-1 block">
-                يتيح للعملاء فتح الخريطة مباشرة بنقرة واحدة والوصول لمحل ميني بيك.
+                يتيح للعملاء فتح الخريطة مباشرة بنقرة واحدة والوصول لمقر دي سي سمارت.
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-2">
               <div>
                 <label className="block text-zinc-300 font-medium mb-1 flex items-center gap-1.5">
-                  <Clock size={14} className="text-pink-400" />
+                  <Clock size={14} className="text-cyan-400" />
                   <span>مواعيد وساعات العمل واستقبال الزوار:</span>
                 </label>
                 <input
@@ -295,7 +295,7 @@ export default function SettingsPage() {
                   value={workingHoursAr}
                   onChange={(e) => setWorkingHoursAr(e.target.value)}
                   placeholder="يومياً من 10 صباحاً وحتى 12 منتصف الليل"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-pink-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
@@ -307,16 +307,16 @@ export default function SettingsPage() {
                   type="number"
                   value={freeShippingThreshold}
                   onChange={(e) => setFreeShippingThreshold(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono focus:outline-none focus:border-pink-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono focus:outline-none focus:border-cyan-500"
                 />
               </div>
             </div>
           </div>
 
           {/* Section 3: Announcement Bar & Branding */}
-          <div className="bg-[#0c0914] border border-pink-500/20 rounded-2xl p-5 shadow-xl space-y-4">
+          <div className="bg-[#0c0914] border border-cyan-500/20 rounded-2xl p-5 shadow-xl space-y-4">
             <h3 className="font-serif font-bold text-sm text-zinc-100 flex items-center gap-2 border-b border-zinc-800 pb-3">
-              <Sparkles size={17} className="text-pink-400" />
+              <Sparkles size={17} className="text-cyan-400" />
               <span>الشريط الإعلاني العلوي للموقع والهوية</span>
             </h3>
 
@@ -330,7 +330,7 @@ export default function SettingsPage() {
                   value={announcementAr}
                   onChange={(e) => setAnnouncementAr(e.target.value)}
                   placeholder="✨ شحن مجاني للطلبات فوق 1500 ج.م + عينات مجانية فاخرة مع كل طلب ✨"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-pink-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
@@ -343,7 +343,7 @@ export default function SettingsPage() {
                   value={announcementEn}
                   onChange={(e) => setAnnouncementEn(e.target.value)}
                   placeholder="✨ Free shipping on orders over 1500 EGP + complimentary luxury samples ✨"
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono focus:outline-none focus:border-pink-500"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono focus:outline-none focus:border-cyan-500"
                 />
               </div>
             </div>

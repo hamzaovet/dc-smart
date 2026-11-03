@@ -16,30 +16,30 @@ os.makedirs(artifact_dir, exist_ok=True)
 web_url = "https://dc-smart.vercel.app"
 apk_url = "https://dc-smart.vercel.app/api/download/apk"
 
-# Web QR
+# Web QR - high contrast crisp
 qr_web = qrcode.QRCode(
     version=None,
     error_correction=qrcode.constants.ERROR_CORRECT_H,
-    box_size=10,
+    box_size=12,
     border=1,
 )
 qr_web.add_data(web_url)
 qr_web.make(fit=True)
-img_web = qr_web.make_image(fill_color="#080c14", back_color="white")
+img_web = qr_web.make_image(fill_color="#060912", back_color="#ffffff")
 buf_web = BytesIO()
 img_web.save(buf_web, format="PNG")
 web_qr_b64 = base64.b64encode(buf_web.getvalue()).decode("ascii")
 
-# APK QR
+# APK QR - high contrast crisp
 qr_apk = qrcode.QRCode(
     version=None,
     error_correction=qrcode.constants.ERROR_CORRECT_H,
-    box_size=10,
+    box_size=12,
     border=1,
 )
 qr_apk.add_data(apk_url)
 qr_apk.make(fit=True)
-img_apk = qr_apk.make_image(fill_color="#080c14", back_color="white")
+img_apk = qr_apk.make_image(fill_color="#060912", back_color="#ffffff")
 buf_apk = BytesIO()
 img_apk.save(buf_apk, format="PNG")
 apk_qr_b64 = base64.b64encode(buf_apk.getvalue()).decode("ascii")
@@ -60,336 +60,350 @@ html_content = f"""<!DOCTYPE html>
   <meta charset="UTF-8">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Orbitron:wght@700;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
   <style>
     * {{
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }}
-    body {{
-      width: 1200px;
+    html, body {{
+      width: 1080px;
+      height: 620px;
       margin: 0;
-      padding: 24px;
-      background: #030508;
+      padding: 0;
+      background: #050811;
       font-family: 'Cairo', system-ui, -apple-system, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      overflow: hidden;
       -webkit-font-smoothing: antialiased;
     }}
 
     .card-container {{
-      width: 1150px;
-      background: linear-gradient(135deg, #090e1a 0%, #060912 50%, #0c1424 100%);
-      border-radius: 32px;
-      border: 2px solid rgba(6, 182, 212, 0.45);
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.95), 0 0 35px rgba(6, 182, 212, 0.2);
-      padding: 30px 40px;
+      width: 1080px;
+      height: 620px;
+      background: radial-gradient(circle at 85% 15%, rgba(6, 182, 212, 0.18) 0%, transparent 45%),
+                  radial-gradient(circle at 15% 85%, rgba(37, 99, 235, 0.16) 0%, transparent 45%),
+                  linear-gradient(135deg, #090e1a 0%, #060912 55%, #0a1122 100%);
+      border: 2px solid rgba(6, 182, 212, 0.55);
+      border-radius: 28px;
+      padding: 26px 36px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      justify-content: space-between;
       position: relative;
       overflow: hidden;
+      box-shadow: inset 0 0 40px rgba(6, 182, 212, 0.12);
     }}
 
+    /* Futuristic Circuit Grid Background Effect */
     .card-container::before {{
       content: "";
       position: absolute;
       inset: 0;
       background-image: 
-        radial-gradient(circle at 10% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 40%),
-        radial-gradient(circle at 90% 80%, rgba(37, 99, 235, 0.15) 0%, transparent 45%);
+        radial-gradient(circle at 1px 1px, rgba(6, 182, 212, 0.12) 1px, transparent 0);
+      background-size: 28px 28px;
+      pointer-events: none;
+      opacity: 0.6;
+    }}
+
+    /* Glow Corner Accents */
+    .corner-accent {{
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border: 3px solid #06b6d4;
       pointer-events: none;
     }}
+    .corner-tl {{ top: 12px; right: 12px; border-left: none; border-bottom: none; border-top-right-radius: 12px; }}
+    .corner-tr {{ top: 12px; left: 12px; border-right: none; border-bottom: none; border-top-left-radius: 12px; }}
+    .corner-bl {{ bottom: 12px; right: 12px; border-left: none; border-top: none; border-bottom-right-radius: 12px; }}
+    .corner-br {{ bottom: 12px; left: 12px; border-right: none; border-top: none; border-bottom-left-radius: 12px; }}
 
-    /* Top Bar */
-    .top-bar {{
+    /* Header Bar */
+    .header {{
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      position: relative;
-      z-index: 10;
-    }}
-
-    .badge-vip {{
-      background: rgba(6, 182, 212, 0.12);
-      border: 1.5px solid rgba(6, 182, 212, 0.5);
-      color: #38bdf8;
-      font-size: 12px;
-      font-weight: 800;
-      padding: 6px 16px;
-      border-radius: 50px;
-      letter-spacing: 1.5px;
-      font-family: 'Orbitron', 'Cairo', sans-serif;
-      display: flex;
       align-items: center;
-      gap: 8px;
+      position: relative;
+      z-index: 2;
     }}
-
-    .badge-dot {{
-      width: 8px;
-      height: 8px;
-      background: #10b981;
-      border-radius: 50%;
-      box-shadow: 0 0 8px #10b981;
-    }}
-
-    .brand-section {{
+    .brand-wrap {{
       display: flex;
       align-items: center;
       gap: 16px;
     }}
-
     .brand-logo {{
-      width: 58px;
-      height: 58px;
+      width: 64px;
+      height: 64px;
       border-radius: 16px;
-      overflow: hidden;
-      border: 2px solid rgba(6, 182, 212, 0.6);
-      box-shadow: 0 6px 20px rgba(6, 182, 212, 0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #050811;
+      background: linear-gradient(135deg, #06b6d4, #2563eb);
+      padding: 2px;
+      box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
     }}
-
     .brand-logo img {{
       width: 100%;
       height: 100%;
+      border-radius: 14px;
       object-fit: cover;
+      display: block;
     }}
-
-    .brand-text {{
-      display: flex;
-      flex-direction: column;
-      text-align: right;
-    }}
-
-    .brand-name {{
-      font-size: 26px;
+    .brand-text h1 {{
+      font-size: 27px;
       font-weight: 900;
       color: #ffffff;
-      line-height: 1.1;
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
     }}
-
-    .brand-tagline {{
-      font-size: 11.5px;
-      color: #38bdf8;
+    .brand-text p {{
+      font-size: 13.5px;
       font-weight: 700;
+      color: #38bdf8;
+      font-family: 'Cairo', sans-serif;
       margin-top: 2px;
     }}
-
-    /* Subtitle Banner */
-    .banner-specs {{
-      background: rgba(15, 23, 42, 0.7);
-      border: 1px solid rgba(6, 182, 212, 0.25);
-      border-radius: 14px;
-      padding: 9px 18px;
-      display: flex;
-      align-items: center;
-      justify-content: space-around;
-      position: relative;
-      z-index: 10;
-    }}
-
-    .spec-item {{
+    .badge-vip {{
+      background: rgba(6, 182, 212, 0.12);
+      border: 1.5px solid rgba(6, 182, 212, 0.65);
+      border-radius: 50px;
+      padding: 7px 18px;
       display: flex;
       align-items: center;
       gap: 8px;
-      color: #e2e8f0;
+      box-shadow: 0 0 16px rgba(6, 182, 212, 0.25);
+    }}
+    .badge-dot {{
+      width: 9px;
+      height: 9px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #10b981;
+    }}
+    .badge-vip span {{
+      font-family: 'Orbitron', sans-serif;
       font-size: 11.5px;
-      font-weight: 700;
+      font-weight: 900;
+      color: #a5f3fc;
+      letter-spacing: 1.5px;
     }}
 
-    .spec-item span.icon {{
-      color: #06b6d4;
-      font-size: 14px;
-    }}
-
-    /* QR Grid */
-    .qr-grid {{
+    /* Features Strip */
+    .features-strip {{
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
-      position: relative;
-      z-index: 10;
-    }}
-
-    .qr-box {{
-      background: rgba(11, 18, 33, 0.85);
-      border: 1.5px solid rgba(6, 182, 212, 0.3);
-      border-radius: 20px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      box-shadow: inset 0 0 25px rgba(6, 182, 212, 0.05);
-    }}
-
-    .qr-frame {{
-      background: #ffffff;
-      padding: 10px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      background: rgba(11, 19, 36, 0.85);
+      border: 1px solid rgba(6, 182, 212, 0.25);
       border-radius: 16px;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6);
-      margin-bottom: 10px;
+      padding: 8px 14px;
+      position: relative;
+      z-index: 2;
+    }}
+    .feature-item {{
       display: flex;
       align-items: center;
       justify-content: center;
+      gap: 7px;
+      font-size: 11.5px;
+      font-weight: 700;
+      color: #e2e8f0;
+      white-space: nowrap;
     }}
 
-    .qr-frame img {{
-      width: 145px;
-      height: 145px;
+    /* QR Cards Grid - Symmetric & Full Width */
+    .qr-grid {{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      position: relative;
+      z-index: 2;
+    }}
+    .qr-card {{
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(8, 14, 26, 0.95));
+      border: 1.5px solid rgba(6, 182, 212, 0.4);
+      border-radius: 20px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(6, 182, 212, 0.08);
+    }}
+    .qr-img-box {{
+      width: 140px;
+      height: 140px;
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+      flex-shrink: 0;
+    }}
+    .qr-img-box img {{
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
       display: block;
     }}
-
-    .qr-title {{
-      font-size: 14px;
-      font-weight: 900;
-      color: #ffffff;
-      margin-bottom: 3px;
+    .qr-info {{
       display: flex;
-      align-items: center;
-      gap: 5px;
+      flex-direction: column;
+      gap: 6px;
     }}
-
-    .qr-link {{
-      font-size: 11px;
+    .qr-info .pill {{
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(6, 182, 212, 0.18);
+      border: 1px solid rgba(6, 182, 212, 0.45);
       color: #38bdf8;
-      font-family: 'Orbitron', monospace;
-      font-weight: 700;
-      direction: ltr;
-    }}
-
-    /* Bottom Information Bar */
-    .bottom-bar {{
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-top: 1px solid rgba(6, 182, 212, 0.25);
-      padding-top: 14px;
-      position: relative;
-      z-index: 10;
-    }}
-
-    .contact-group {{
-      display: flex;
-      align-items: center;
-      gap: 18px;
-      color: #f1f5f9;
-      font-size: 13px;
+      font-size: 10.5px;
       font-weight: 800;
-      font-family: monospace;
+      padding: 3px 10px;
+      border-radius: 20px;
+      width: fit-content;
+    }}
+    .qr-info h3 {{
+      font-size: 16px;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.3;
+    }}
+    .qr-info p {{
+      font-size: 11px;
+      color: #94a3b8;
+      font-family: 'JetBrains Mono', monospace;
+      direction: ltr;
+      text-align: right;
     }}
 
+    /* Footer Info & Contacts */
+    .footer {{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(11, 19, 36, 0.9);
+      border: 1px solid rgba(6, 182, 212, 0.25);
+      border-radius: 14px;
+      padding: 10px 18px;
+      font-size: 12px;
+      position: relative;
+      z-index: 2;
+    }}
+    .contacts-row {{
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }}
     .contact-item {{
       display: flex;
       align-items: center;
-      gap: 5px;
-    }}
-
-    .contact-item span.lbl {{
-      color: #94a3b8;
-      font-size: 11px;
-      font-weight: 600;
-    }}
-
-    .location-info {{
-      color: #e2e8f0;
-      font-size: 12px;
+      gap: 6px;
+      color: #ffffff;
+      font-family: 'JetBrains Mono', sans-serif;
       font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 5px;
+      font-size: 12px;
+    }}
+    .contact-item .lbl {{
+      color: #38bdf8;
+      font-family: 'Cairo', sans-serif;
+      font-weight: 700;
+    }}
+    .location-box {{
+      color: #cbd5e1;
+      font-weight: 600;
+      font-size: 11.5px;
     }}
 
-    /* Developer Watermark with user phone number */
-    .developer-watermark {{
+    /* Developer Watermark */
+    .watermark {{
       text-align: center;
-      font-size: 12px;
+      font-size: 11px;
+      font-weight: 700;
       color: #38bdf8;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      padding-top: 10px;
-      border-top: 1px dashed rgba(6, 182, 212, 0.3);
+      font-family: 'Cairo', sans-serif;
+      letter-spacing: 0.3px;
       position: relative;
-      z-index: 10;
+      z-index: 2;
     }}
   </style>
 </head>
 <body>
   <div class="card-container">
-    <!-- Top Bar -->
-    <div class="top-bar">
+    <div class="corner-accent corner-tl"></div>
+    <div class="corner-accent corner-tr"></div>
+    <div class="corner-accent corner-bl"></div>
+    <div class="corner-accent corner-br"></div>
+
+    <!-- Header -->
+    <div class="header">
+      <div class="brand-wrap">
+        <div class="brand-logo">
+          <img src="data:image/jpeg;base64,{logo_b64}" alt="DC Smart Logo">
+        </div>
+        <div class="brand-text">
+          <h1>دي سي سمارت</h1>
+          <p>أنظمة المراقبة والتحكم الذكي — DC SMART CCTV</p>
+        </div>
+      </div>
       <div class="badge-vip">
         <div class="badge-dot"></div>
         <span>SECURITY VERIFIED • VIP 2026</span>
       </div>
-
-      <div class="brand-section">
-        <div class="brand-text">
-          <div class="brand-name">دي سي سمارت</div>
-          <div class="brand-tagline">أنظمة المراقبة والتحكم الذكي — DC SMART CCTV</div>
-        </div>
-        <div class="brand-logo">
-          {f'<img src="data:image/jpeg;base64,{logo_b64}" alt="DC Smart">' if logo_b64 else '<span style="color:#06b6d4;font-size:22px;font-weight:900;">DC</span>'}
-        </div>
-      </div>
     </div>
 
-    <!-- Specs Banner -->
-    <div class="banner-specs">
-      <div class="spec-item">
-        <span class="icon">📹</span>
+    <!-- Features Strip -->
+    <div class="features-strip">
+      <div class="feature-item">
+        <span>📹</span>
         <span>كاميرات HD & IP فائقة الدقة 4K</span>
       </div>
-      <div class="spec-item">
-        <span class="icon">🌙</span>
+      <div class="feature-item">
+        <span>🌙</span>
         <span>رؤية ليلية ملونة Full Color</span>
       </div>
-      <div class="spec-item">
-        <span class="icon">🛡️</span>
+      <div class="feature-item">
+        <span>🛡️</span>
         <span>ضمان عامين شامل واستبدال فوري</span>
       </div>
-      <div class="spec-item">
-        <span class="icon">📱</span>
+      <div class="feature-item">
+        <span>📱</span>
         <span>متابعة حية وإشعارات على الهاتف</span>
       </div>
     </div>
 
     <!-- Dual QR Codes -->
     <div class="qr-grid">
-      <!-- Web QR -->
-      <div class="qr-box">
-        <div class="qr-frame">
-          <img src="data:image/png;base64,{web_qr_b64}" alt="DC Smart Website">
+      <!-- Website QR -->
+      <div class="qr-card">
+        <div class="qr-img-box">
+          <img src="data:image/png;base64,{web_qr_b64}" alt="Website QR">
         </div>
-        <div class="qr-title">
-          <span>🌐</span>
-          <span>زيارة الموقع والكتالوج الإلكتروني</span>
+        <div class="qr-info">
+          <span class="pill">🌐 الكتالوج الإلكتروني</span>
+          <h3>المتجر والعروض الحية</h3>
+          <p>dc-smart.vercel.app</p>
         </div>
-        <div class="qr-link">dc-smart.vercel.app</div>
       </div>
 
       <!-- App QR -->
-      <div class="qr-box">
-        <div class="qr-frame">
-          <img src="data:image/png;base64,{apk_qr_b64}" alt="Download Android App">
+      <div class="qr-card">
+        <div class="qr-img-box">
+          <img src="data:image/png;base64,{apk_qr_b64}" alt="APK Download QR">
         </div>
-        <div class="qr-title">
-          <span>📲</span>
-          <span>تحميل تطبيق الأندرويد الرسمي</span>
+        <div class="qr-info">
+          <span class="pill">📲 التطبيق الذكي</span>
+          <h3>تحميل تطبيق الأندرويد</h3>
+          <p>dcsmart.apk (v1.0.0)</p>
         </div>
-        <div class="qr-link">dcsmart.apk (v1.0.0)</div>
       </div>
     </div>
 
-    <!-- Bottom Bar -->
-    <div class="bottom-bar">
-      <div class="contact-group">
+    <!-- Contacts & Location -->
+    <div class="footer">
+      <div class="contacts-row">
         <div class="contact-item">
           <span class="lbl">مبيعات:</span>
           <span>01008657085</span>
@@ -403,14 +417,13 @@ html_content = f"""<!DOCTYPE html>
           <span>01007302685</span>
         </div>
       </div>
-
-      <div class="location-info">
+      <div class="location-box">
         <span>📍 طنطا — محافظة الغربية — جمهورية مصر العربية</span>
       </div>
     </div>
 
-    <!-- Developer Credit with User Phone -->
-    <div class="developer-watermark">
+    <!-- Developer Watermark -->
+    <div class="watermark">
       تم التطوير بواسطة شركة أوركا لتقنية المعلومات — 01018671000
     </div>
   </div>
@@ -438,7 +451,8 @@ if chrome_bin:
         "--headless=new",
         "--disable-gpu",
         "--hide-scrollbars",
-        "--window-size=1200,780",
+        "--window-size=1080,620",
+        "--device-scale-factor=2",
         f"--screenshot={out_png}",
         f"file:///{html_path.replace(os.sep, '/')}",
     ]
@@ -447,3 +461,5 @@ if chrome_bin:
         shutil.copy(out_png, artifact_png)
         print("Successfully generated VIP card at:", out_png)
         print("Copied to artifact dir:", artifact_png)
+else:
+    print("Chrome not found!")

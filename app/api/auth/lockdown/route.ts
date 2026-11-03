@@ -21,7 +21,27 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const { isEmergencyLockdown } = await req.json();
+    const { isEmergencyLockdown, pin } = await req.json();
+
+    if (!pin || typeof pin !== "string") {
+      return NextResponse.json(
+        { error: "كود الأمان السري PIN مطلوب لإتمام العملية" },
+        { status: 400 }
+      );
+    }
+
+    // Verify PIN against DB owner or fallback
+    const ownerUser = await prisma.user.findFirst({
+      where: { OR: [{ username: "maestro" }, { role: "owner" }] },
+    });
+
+    const expectedPin = ownerUser?.pin || "157230";
+    if (pin.trim() !== expectedPin) {
+      return NextResponse.json(
+        { error: "كود الأمان السري الخاص بالمالك غير صحيح! تم رفض الطلب." },
+        { status: 403 }
+      );
+    }
 
     const updated = await prisma.storeSettings.upsert({
       where: { id: "rovy_settings" },

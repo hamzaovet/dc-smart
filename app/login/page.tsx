@@ -70,12 +70,6 @@ export default function LoginPage() {
     }
   };
 
-  const fillCredentials = (u: string, p: string, pinCode: string) => {
-    setUsername(u);
-    setPassword(p);
-    setPin(pinCode);
-  };
-
   return (
     <div className="min-h-[85vh] flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-[#0b1120] p-8 rounded-3xl border border-cyan-500/30 shadow-2xl relative overflow-hidden">
@@ -96,31 +90,6 @@ export default function LoginPage() {
           <p className="text-xs text-slate-400 font-light">
             {isAr ? "دي سي سمارت — لأنظمة المراقبة والتحكم الذكي" : "DC Smart CCTV & Control Systems"}
           </p>
-        </div>
-
-        {/* Quick Credentials Card */}
-        <div className="mb-6 p-3 rounded-xl bg-slate-950/80 border border-cyan-500/20 text-xs space-y-2">
-          <div className="flex items-center justify-between text-[11px] font-bold text-slate-400">
-            <span>حسابات النظام المصرحة (للتعبئة التلقائية):</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => fillCredentials("maestro", "123456789", "157230")}
-              className="p-2 rounded-lg bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-500/30 text-right transition"
-            >
-              <div className="font-bold text-cyan-300">👑 المالك (المايسترو)</div>
-              <div className="text-[10px] text-slate-400 font-mono">PIN: 157230</div>
-            </button>
-            <button
-              type="button"
-              onClick={() => fillCredentials("manager", "123456789", "445566")}
-              className="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-right transition"
-            >
-              <div className="font-bold text-slate-200">👔 حساب المدير</div>
-              <div className="text-[10px] text-slate-400 font-mono">PIN: 445566</div>
-            </button>
-          </div>
         </div>
 
         {/* Error Alert */}
@@ -151,7 +120,7 @@ export default function LoginPage() {
                 autoComplete="off"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="maestro أو manager"
+                placeholder={isAr ? "أدخل اسم المستخدم" : "Enter username"}
                 className={`w-full py-2.5 ${
                   dir === "rtl" ? "pr-10 pl-4" : "pl-10 pr-4"
                 } rounded-xl bg-slate-950 border border-slate-700 focus:border-cyan-400 text-xs text-slate-100 placeholder:text-slate-600 outline-none transition font-sans`}

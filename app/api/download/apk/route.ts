@@ -1,11 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const downloadUrl =
     process.env.APK_DOWNLOAD_URL ||
-    "https://github.com/hamzaovet/dc-smart/releases/download/v1.0.0/dcsmart.apk";
+    new URL("/downloads/dcsmart.apk", req.url).toString();
 
   return NextResponse.redirect(downloadUrl, {
     status: 302,

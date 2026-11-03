@@ -55,14 +55,14 @@ export default function VipCardPage() {
 
       {/* Official Rendered Card Preview */}
       <div className="flex flex-col items-center justify-center space-y-6">
-        <div className="w-full max-w-3xl rounded-3xl overflow-hidden border-2 border-cyan-500/40 shadow-2xl shadow-cyan-950/60 bg-[#080c14] relative group">
+        <div className="w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl shadow-cyan-500/20 relative group transition-all duration-300 hover:shadow-cyan-500/40">
           <Image
             src="/dcsmart-official-card.png"
             alt="دي سي سمارت — كارت الشركة الرسمي"
-            width={1200}
-            height={780}
+            width={1080}
+            height={620}
             priority
-            className="w-full h-auto object-cover group-hover:scale-[1.01] transition-transform duration-300"
+            className="w-full h-auto object-contain block"
           />
         </div>
 
