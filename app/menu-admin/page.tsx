@@ -633,7 +633,7 @@ export default function MenuAdminPage() {
 
                           {/* Category */}
                           <td className="py-3 px-4">
-                            <span className="px-2 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-[11px] text-zinc-300">
+                            <span className="inline-block whitespace-nowrap px-2.5 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-[11px] font-bold text-zinc-300">
                               {catName}
                             </span>
                           </td>

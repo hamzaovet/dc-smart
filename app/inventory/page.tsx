@@ -465,7 +465,7 @@ export default function InventoryPage() {
                         </td>
 
                         <td className="py-3 px-4 text-zinc-400">
-                          <span className="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 text-[10px]">
+                          <span className="inline-block whitespace-nowrap px-2.5 py-1 rounded-lg bg-zinc-800 border border-zinc-700 text-zinc-200 text-[11px] font-bold">
                             {item.category}
                           </span>
                         </td>

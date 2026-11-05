@@ -387,7 +387,7 @@ export default function CustomersPage() {
                               👑 عميل VIP ملكي
                             </span>
                           ) : (
-                            <span className="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 text-[10px]">
+                            <span className="inline-block whitespace-nowrap px-2.5 py-1 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-300 text-[10px] font-bold">
                               عميل دائم
                             </span>
                           )}
