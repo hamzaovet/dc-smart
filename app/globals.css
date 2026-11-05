@@ -71,7 +71,7 @@ body {
 }
 
 /* ==========================================================
-   ☀️ HIGH-CONTRAST LIGHT MODE ENGINE (الوضع الفاتح فائق التباين والفخامة)
+   ☀️ MASTER HIGH-CONTRAST LIGHT MODE ENGINE
    ========================================================== */
 .theme-light,
 .theme-light body {
@@ -87,22 +87,42 @@ body {
   background: #94a3b8 !important;
 }
 
-/* 1. All dark surface containers & cards -> Crisp White / Slate */
-.theme-light div[class*="bg-[#080c14]"],
-.theme-light div[class*="bg-[#0b1120]"],
-.theme-light div[class*="bg-[#0c0914]"],
-.theme-light div[class*="bg-[#0f1422]"],
-.theme-light div[class*="bg-zinc-950"],
-.theme-light div[class*="bg-zinc-900"],
-.theme-light div[class*="bg-slate-900"],
-.theme-light div[class*="bg-slate-950"],
-.theme-light aside {
+/* 1. ELIMINATE ALL DARK GRADIENT BANNERS & HEADERS */
+.theme-light [class*="from-[#"],
+.theme-light [class*="from-cyan-9"],
+.theme-light [class*="from-slate-9"],
+.theme-light [class*="from-zinc-9"],
+.theme-light [class*="via-[#"],
+.theme-light [class*="to-[#"] {
+  background-image: none !important;
   background-color: #ffffff !important;
-  border-color: #cbd5e1 !important;
+  border-color: #e2e8f0 !important;
   color: #0f172a !important;
 }
 
-/* 2. SIDEBAR NAVIGATION in Light Mode (Fixes faded sidebar items) */
+/* 2. TURN ALL DARK HEX & UTILITY BACKGROUNDS TO WHITE / LIGHT */
+.theme-light [class*="bg-[#"],
+.theme-light [class*="bg-zinc-9"],
+.theme-light [class*="bg-slate-9"],
+.theme-light [class*="bg-black"]:not(.fixed),
+.theme-light aside {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* 3. NESTED BOXES (Order items box, Customer info box, tables inner container) */
+.theme-light [class*="bg-black/"],
+.theme-light [class*="bg-zinc-900/"],
+.theme-light [class*="bg-zinc-950/"],
+.theme-light [class*="bg-slate-900/"],
+.theme-light [class*="bg-slate-950/"] {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* 4. SIDEBAR NAVIGATION in Light Mode */
 .theme-light aside {
   background-color: #ffffff !important;
   border-left-color: #e2e8f0 !important;
@@ -117,9 +137,8 @@ body {
   color: #0284c7 !important;
 }
 
-/* Inactive nav links in sidebar */
 .theme-light aside nav a:not([class*="from-cyan-600"]) {
-  color: #334155 !important;
+  color: #1e293b !important;
   font-weight: 700 !important;
 }
 
@@ -129,14 +148,13 @@ body {
 }
 
 .theme-light aside nav a:not([class*="from-cyan-600"]) svg {
-  color: #64748b !important;
+  color: #475569 !important;
 }
 
 .theme-light aside nav a:not([class*="from-cyan-600"]):hover svg {
   color: #0284c7 !important;
 }
 
-/* Nav badges in sidebar */
 .theme-light aside nav span[class*="text-cyan-300"],
 .theme-light aside nav span[class*="bg-cyan-500"] {
   background-color: #e0f2fe !important;
@@ -145,7 +163,6 @@ body {
   font-weight: 800 !important;
 }
 
-/* Active nav link in sidebar */
 .theme-light aside nav a[class*="from-cyan-600"] {
   background: linear-gradient(to right, #0284c7, #2563eb) !important;
   color: #ffffff !important;
@@ -157,7 +174,6 @@ body {
   color: #ffffff !important;
 }
 
-/* Sidebar user box & bottom actions */
 .theme-light aside div[class*="bg-cyan-500/10"] {
   background-color: #f0f9ff !important;
   border-color: #bae6fd !important;
@@ -183,7 +199,7 @@ body {
   color: #64748b !important;
 }
 
-/* 3. TABLES in Light Mode */
+/* 5. TABLES in Light Mode */
 .theme-light table {
   background-color: #ffffff !important;
   color: #0f172a !important;
@@ -207,7 +223,7 @@ body {
   background-color: #f8fafc !important;
 }
 
-/* 4. TYPOGRAPHY: ELIMINATE ALL WHITE OR FAINT TEXT IN LIGHT MODE */
+/* 6. TYPOGRAPHY: TOTAL EXTINCTION OF FAINT/WHITE TEXT IN LIGHT MODE */
 .theme-light h1,
 .theme-light h2,
 .theme-light h3,
@@ -217,17 +233,16 @@ body {
   color: #0f172a !important;
 }
 
-/* Elements with text-white, text-zinc-100/200/300, text-slate-100/200/300 */
 .theme-light [class*="text-zinc-100"],
 .theme-light [class*="text-zinc-200"],
 .theme-light [class*="text-zinc-300"],
 .theme-light [class*="text-slate-100"],
 .theme-light [class*="text-slate-200"],
-.theme-light [class*="text-slate-300"] {
+.theme-light [class*="text-slate-300"],
+.theme-light [class*="text-white"]:not(.btn):not([class*="from-cyan-600"]) {
   color: #0f172a !important;
 }
 
-/* Faint secondary text -> Sharp Slate-700 / Slate-600 */
 .theme-light [class*="text-zinc-400"],
 .theme-light [class*="text-slate-400"] {
   color: #334155 !important;
@@ -238,7 +253,6 @@ body {
   color: #475569 !important;
 }
 
-/* Gradients in Light Mode */
 .theme-light .text-pink-gradient,
 .theme-light .text-cyan-gradient,
 .theme-light .text-silver-gradient {
@@ -249,18 +263,14 @@ body {
   font-weight: 900 !important;
 }
 
-/* 5. BADGES & PILLS: Stop dark background boxes in light mode */
-.theme-light span[class*="bg-zinc-800"],
-.theme-light span[class*="bg-zinc-900"],
-.theme-light span[class*="bg-zinc-950"],
-.theme-light span[class*="bg-slate-800"],
-.theme-light span[class*="bg-slate-850"],
-.theme-light span[class*="bg-slate-900"],
+/* 7. BADGES & PILLS: Stop dark background boxes in light mode */
+.theme-light span[class*="bg-zinc-8"],
+.theme-light span[class*="bg-zinc-9"],
+.theme-light span[class*="bg-slate-8"],
+.theme-light span[class*="bg-slate-9"],
 .theme-light span[class*="bg-black"],
-.theme-light td span[class*="bg-zinc-900"],
-.theme-light td span[class*="bg-zinc-800"],
-.theme-light div[class*="bg-zinc-800"]:not(.fixed),
-.theme-light div[class*="bg-zinc-950"]:not(.fixed) {
+.theme-light td span[class*="bg-zinc-9"],
+.theme-light td span[class*="bg-zinc-8"] {
   background-color: #f1f5f9 !important;
   border-color: #cbd5e1 !important;
   color: #1e293b !important;
@@ -318,7 +328,7 @@ body {
   color: #6d28d9 !important;
 }
 
-/* 6. Form Controls: Inputs, Selects, and Textareas */
+/* 8. FORM CONTROLS: Inputs, Selects, and Textareas */
 .theme-light input,
 .theme-light select,
 .theme-light textarea {
@@ -332,36 +342,56 @@ body {
   color: #94a3b8 !important;
 }
 
-/* 7. Action & Filter Buttons in Light Mode */
-.theme-light button[class*="bg-zinc-900"],
-.theme-light button[class*="bg-zinc-800"] {
-  background-color: #ffffff !important;
+/* 9. SECONDARY BUTTONS (e.g., مناطق وتسعيرة الشحن, إضافة بند يدوي) */
+.theme-light button[class*="bg-zinc-8"],
+.theme-light button[class*="bg-zinc-9"],
+.theme-light button[class*="bg-slate-8"],
+.theme-light button[class*="bg-slate-9"]:not([class*="from-"]) {
+  background-image: none !important;
+  background-color: #f1f5f9 !important;
   border: 1px solid #cbd5e1 !important;
   color: #1e293b !important;
 }
 
-.theme-light button[class*="bg-zinc-900"]:hover,
-.theme-light button[class*="bg-zinc-800"]:hover {
-  background-color: #f1f5f9 !important;
+.theme-light button[class*="bg-zinc-8"]:hover,
+.theme-light button[class*="bg-zinc-9"]:hover,
+.theme-light button[class*="bg-slate-8"]:hover,
+.theme-light button[class*="bg-slate-9"]:not([class*="from-"]):hover {
+  background-color: #e2e8f0 !important;
   color: #0284c7 !important;
 }
 
-/* 8. Top switcher tabs ("قائمة المنتجات (208)", "أقسام المتجر (10)") */
+/* 10. PIPELINE / STATUS TABS */
+.theme-light button[class*="bg-zinc-900/80"] {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #475569 !important;
+}
+
+.theme-light button[class*="bg-zinc-900/80"]:hover {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+/* 11. TAB CONTAINERS */
+.theme-light div[class*="bg-slate-900/90"],
 .theme-light div[class*="bg-zinc-950"] {
   background-color: #e2e8f0 !important;
   border-color: #cbd5e1 !important;
 }
 
-.theme-light div[class*="bg-zinc-950"] button:not([class*="bg-pink-500"]):not([class*="bg-cyan-500"]) {
+.theme-light div[class*="bg-slate-900/90"] button:not([class*="bg-cyan-500"]):not([class*="bg-pink-500"]),
+.theme-light div[class*="bg-zinc-950"] button:not([class*="bg-cyan-500"]):not([class*="bg-pink-500"]) {
   color: #475569 !important;
   font-weight: 700 !important;
 }
 
-.theme-light div[class*="bg-zinc-950"] button:not([class*="bg-pink-500"]):not([class*="bg-cyan-500"]):hover {
+.theme-light div[class*="bg-slate-900/90"] button:not([class*="bg-cyan-500"]):not([class*="bg-pink-500"]):hover,
+.theme-light div[class*="bg-zinc-950"] button:not([class*="bg-cyan-500"]):not([class*="bg-pink-500"]):hover {
   color: #0f172a !important;
 }
 
-/* 9. Modals Backdrops */
+/* 12. Modals Backdrops */
 .theme-light .fixed.inset-0.z-50 > div {
   background-color: #ffffff !important;
   border-color: #cbd5e1 !important;

@@ -211,7 +211,7 @@ export default function DashboardOrdersPage() {
     <ErpLayout activeItem="orders">
       <div className="space-y-6">
         {/* Header Bar */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#120e1c] via-[#0e0b16] to-[#120e1c] p-5 rounded-2xl border border-pink-500/20 shadow-xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-gradient-to-r dark:from-[#120e1c] dark:via-[#0e0b16] dark:to-[#120e1c] p-5 rounded-2xl border border-pink-500/20 shadow-xl">
           <div>
             <div className="flex items-center gap-2">
               <span className="p-2 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-400">
@@ -342,7 +342,7 @@ export default function DashboardOrdersPage() {
               return (
                 <div
                   key={order.id}
-                  className="bg-[#0e0b16] rounded-2xl border border-pink-500/20 hover:border-pink-500/40 transition-all p-5 shadow-lg flex flex-col justify-between space-y-4"
+                  className="bg-white dark:bg-[#0e0b16] rounded-2xl border border-slate-200 dark:border-pink-500/20 hover:border-cyan-500/50 transition-all p-5 shadow-sm dark:shadow-lg flex flex-col justify-between space-y-4"
                 >
                   {/* Top Bar: Order Number, Badge, Time */}
                   <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
@@ -399,7 +399,7 @@ export default function DashboardOrdersPage() {
                   </div>
 
                   {/* Customer Information with Direct WhatsApp Action */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-zinc-900/60 p-3 rounded-xl border border-zinc-800">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-slate-50 dark:bg-zinc-900/60 p-3 rounded-xl border border-slate-200 dark:border-zinc-800">
                     <div>
                       <div className="text-zinc-400 text-[11px]">العميل:</div>
                       <div className="font-bold text-zinc-200 mt-0.5">{order.customerName}</div>
@@ -441,7 +441,7 @@ export default function DashboardOrdersPage() {
                       <span>الأصناف المطلوبة ({parsedItems.length}):</span>
                       <span>طريقة الدفع: {order.paymentMethod}</span>
                     </div>
-                    <div className="divide-y divide-zinc-800/80 rounded-xl bg-black/40 border border-zinc-800/60 p-2 text-xs">
+                    <div className="divide-y divide-slate-200 dark:divide-zinc-800/80 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-zinc-800/60 p-2 text-xs">
                       {parsedItems.map((item, idx) => (
                         <div key={idx} className="py-1.5 flex items-center justify-between gap-2">
                           <div>

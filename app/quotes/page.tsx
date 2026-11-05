@@ -899,7 +899,7 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
     <ErpLayout>
       <div className="space-y-6 pb-12 print:hidden">
         {/* Header Banner */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-gradient-to-r from-cyan-950/60 via-slate-900 to-slate-950 border border-cyan-500/30 shadow-xl shadow-cyan-950/30">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-5 rounded-2xl bg-white dark:bg-gradient-to-r dark:from-cyan-950/60 dark:via-slate-900 dark:to-slate-950 border border-slate-200 dark:border-cyan-500/30 shadow-md dark:shadow-cyan-950/30">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
@@ -916,7 +916,7 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
             </p>
           </div>
 
-          <div className="flex items-center gap-2 bg-slate-900/90 p-1.5 rounded-xl border border-cyan-500/20">
+          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-900/90 p-1.5 rounded-xl border border-slate-300 dark:border-cyan-500/20">
             <button
               onClick={() => {
                 if (editingQuoteId) handleCancelEdit();
@@ -1154,7 +1154,7 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
                   <button
                     type="button"
                     onClick={addCustomItem}
-                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/20 transition flex items-center gap-1.5"
+                    className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 transition flex items-center gap-1.5"
                   >
                     <Plus size={14} />
                     <span>إضافة بند يدوي مخصص</span>
@@ -1164,7 +1164,7 @@ ${q.terms || "الدفعة: 50% مقدم عند التعاقد و50% بعد ال
 
               {/* Product Selector Dropdown */}
               <div className="relative">
-                <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-950 border border-slate-700">
+                <div className="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700">
                   <Search size={16} className="text-slate-400 mr-2" />
                   <input
                     type="text"
