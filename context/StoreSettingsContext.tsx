@@ -18,6 +18,9 @@ export interface StoreSettingsData {
   instagramHandle: string;
   announcementAr: string;
   announcementEn: string;
+  logoUrl?: string;
+  invoiceTermsAr?: string;
+  adminPin?: string;
   deliveryFee: number;
   freeShippingThreshold: number;
 }
@@ -38,6 +41,9 @@ const defaultSettings: StoreSettingsData = {
   instagramHandle: "dcsmart.cctv",
   announcementAr: "🛡️ ضمان عامين شامل استبدال فوري لكافة كاميرات المراقبة وأجهزة التسجيل + معاينة وتركيب احترافي",
   announcementEn: "🛡️ 2-Year Full Replacement Warranty on all CCTV Cameras & DVRs + Professional Installation",
+  logoUrl: "/dc_logo.jpg",
+  invoiceTermsAr: "ضمان سنتين شامل على الكاميرات وأجهزة التسجيل ضد عيوب الصناعة — الدعم الفني والصيانة مستمران",
+  adminPin: "2026",
   deliveryFee: 50.0,
   freeShippingThreshold: 5000.0,
 };

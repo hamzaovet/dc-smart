@@ -4,25 +4,37 @@ import React, { useState, useEffect } from "react";
 import ErpLayout from "@/components/ErpLayout";
 import { playSound } from "@/lib/sounds";
 import { useStaff } from "@/context/StaffContext";
+import SecurityPinModal from "@/components/SecurityPinModal";
 import {
   Handshake,
   Plus,
   Search,
   RefreshCw,
-  FileText,
-  DollarSign,
-  Package,
-  Calendar,
-  X,
-  Printer,
-  RotateCcw,
   Building2,
   Phone,
-  CheckCircle2,
-  Wallet,
-  Clock,
-  ArrowUpRight,
-  ArrowDownRight,
+  MapPin,
+  FileText,
+  DollarSign,
+  TrendingDown,
+  TrendingUp,
+  Receipt,
+  RotateCcw,
+  CreditCard,
+  Calendar,
+  X,
+  Check,
+  AlertCircle,
+  Truck,
+  Package,
+  Layers,
+  Sparkles,
+  Printer,
+  ChevronDown,
+  Edit2,
+  Trash2,
+  Eye,
+  ListOrdered,
+  FileSpreadsheet,
 } from "lucide-react";
 
 interface Supplier {
@@ -38,29 +50,44 @@ interface Supplier {
   currentBalance: number;
   notes?: string | null;
   createdAt: string;
+  purchases?: any[];
+  payments?: any[];
+  returns?: any[];
+}
+
+interface PurchaseItemLine {
+  name: string;
+  category: string;
+  unit: string;
+  quantity: number;
+  costPerUnit: number;
 }
 
 interface PurchaseInvoice {
   id: string;
   invoiceNumber: string;
   supplierId: string;
-  supplier: { name: string };
+  supplier: Supplier;
   items: string;
   totalAmount: number;
   paidAmount: number;
   remainingAmount: number;
   paymentMethod: string;
+  notes?: string | null;
+  recordedBy?: string | null;
   invoiceDate: string;
+  createdAt: string;
 }
 
 interface SupplierPayment {
   id: string;
   paymentNumber: string;
   supplierId: string;
-  supplier: { name: string };
+  supplier: Supplier;
   amount: number;
   paymentMethod: string;
   notes?: string | null;
+  recordedBy?: string | null;
   paymentDate: string;
 }
 
@@ -68,13 +95,36 @@ interface PurchaseReturn {
   id: string;
   returnNumber: string;
   supplierId: string;
-  supplier: { name: string };
+  supplier: Supplier;
   items: string;
   totalRefund: number;
   refundMethod: string;
   reason: string;
+  notes?: string | null;
+  recordedBy?: string | null;
   createdAt: string;
 }
+
+const COMMON_UNITS = [
+  "قطعة",
+  "لفة 100 متر",
+  "لفة (305 متر)",
+  "متر",
+  "كرتونة",
+  "طقم / كيت",
+  "بكرة",
+  "باكت",
+];
+
+const DEFAULT_SUPPLIER_CATEGORIES = [
+  "كاميرات مراقبة وأجهزة تسجيل (Dahua / Hikvision / Uniarch / UNV)",
+  "كابلات شبكات ومحاور ووصلات BNC وجاكات باور",
+  "هارد ديسك وتخزين وراكات تجميع RACK",
+  "باور سبلاي ومحولات مركزية ومهمات كهرباء",
+  "شاشات مراقبة وسويتشات PoE وأجهزة شبكات",
+  "بوابات أمنية وأجهزة إنذار وحضور وانصراف",
+  "مهمات واكسسوارات تركيب (بواطات ومواسير وفيتنج)",
+];
 
 export default function SuppliersPage() {
   const { currentUser } = useStaff();
@@ -92,44 +142,55 @@ export default function SuppliersPage() {
   const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false);
   const [isAddReturnOpen, setIsAddReturnOpen] = useState(false);
   const [statementSupplier, setStatementSupplier] = useState<any | null>(null);
+  const [statementMode, setStatementMode] = useState<"summary" | "detailed">("summary");
 
-  // Supplier Form
+  // View / Print Invoice Modal
+  const [viewingInvoice, setViewingInvoice] = useState<PurchaseInvoice | null>(null);
+
+  // Edit Invoice Modal
+  const [editingInvoice, setEditingInvoice] = useState<PurchaseInvoice | null>(null);
+  const [editLines, setEditLines] = useState<PurchaseItemLine[]>([]);
+  const [editPaid, setEditPaid] = useState("0");
+  const [editMethod, setEditMethod] = useState("CASH");
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  // Security PIN Modal
+  const [pinAction, setPinAction] = useState<(() => void) | null>(null);
+  const [isPinOpen, setIsPinOpen] = useState(false);
+
+  // Add Supplier Form
   const [supName, setSupName] = useState("");
   const [supPhone, setSupPhone] = useState("");
   const [supCompany, setSupCompany] = useState("");
-  const [supCategory, setSupCategory] = useState("كاميرات مراقبة وأجهزة تسجيل");
+  const [supCategory, setSupCategory] = useState("كاميرات مراقبة وأجهزة تسجيل (Dahua / Hikvision / Uniarch / UNV)");
   const [supAddress, setSupAddress] = useState("");
   const [supOpeningBal, setSupOpeningBal] = useState("0");
   const [supNotes, setSupNotes] = useState("");
+  const [savingSupplier, setSavingSupplier] = useState(false);
 
-  // Invoice Form
+  // Add Purchase Invoice Form (Multi-Items Lines)
   const [invSupplierId, setInvSupplierId] = useState("");
-  const [invItemName, setInvItemName] = useState("");
-  const [invItemDesc, setInvItemDesc] = useState("");
-  const [invItemCategory, setInvItemCategory] = useState("كاميرات مراقبة وأجهزة تسجيل");
-  const [invQty, setInvQty] = useState("10");
-  const [invUnit, setInvUnit] = useState("قطعة");
-  const [invCost, setInvCost] = useState("50");
-  const [invTotal, setInvTotal] = useState("500");
-  const [invPaid, setInvPaid] = useState("500");
+  const [purchaseLines, setPurchaseLines] = useState<PurchaseItemLine[]>([
+    {
+      name: "",
+      category: "كاميرات مراقبة وأجهزة تسجيل",
+      unit: "قطعة",
+      quantity: 1,
+      costPerUnit: 0,
+    },
+  ]);
+  const [invPaid, setInvPaid] = useState("0");
   const [invMethod, setInvMethod] = useState("CASH");
   const [invAutoStock, setInvAutoStock] = useState(true);
+  const [invNotes, setInvNotes] = useState("");
+  const [savingInvoice, setSavingInvoice] = useState(false);
 
-  // Payment Form
+  // Add Supplier Payment Form
   const [paySupplierId, setPaySupplierId] = useState("");
   const [payAmount, setPayAmount] = useState("");
-  const [payMethod, setPayMethod] = useState("INSTAPAY");
+  const [payMethod, setPayMethod] = useState("CASH");
   const [payNotes, setPayNotes] = useState("");
-
-  // Return Form
-  const [retSupplierId, setRetSupplierId] = useState("");
-  const [retItemName, setRetItemName] = useState("");
-  const [retQty, setRetQty] = useState("5");
-  const [retRefund, setRetRefund] = useState("250");
-  const [retMethod, setRetMethod] = useState("DEDUCT_BALANCE");
-  const [retReason, setRetReason] = useState("صنف معيب أو عطل فني في الكاميرا/الجهاز");
-
-  const [saving, setSaving] = useState(false);
+  const [savingPayment, setSavingPayment] = useState(false);
 
   useEffect(() => {
     fetchAllData();
@@ -144,6 +205,7 @@ export default function SuppliersPage() {
         fetch("/api/supplier-payments"),
         fetch("/api/purchase-returns"),
       ]);
+
       const dataSup = await resSup.json();
       const dataInv = await resInv.json();
       const dataPay = await resPay.json();
@@ -153,18 +215,47 @@ export default function SuppliersPage() {
       setInvoices(dataInv.invoices || []);
       setPayments(dataPay.payments || []);
       setReturns(dataRet.returns || []);
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  // 1. Add Supplier
-  const handleAddSupplier = async (e: React.FormEvent) => {
+  // Manage Purchase Lines
+  const handleAddPurchaseLine = () => {
+    setPurchaseLines((prev) => [
+      ...prev,
+      {
+        name: "",
+        category: "كاميرات مراقبة وأجهزة تسجيل",
+        unit: "قطعة",
+        quantity: 1,
+        costPerUnit: 0,
+      },
+    ]);
+  };
+
+  const handleRemovePurchaseLine = (idx: number) => {
+    if (purchaseLines.length <= 1) return;
+    setPurchaseLines((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const handlePurchaseLineChange = (idx: number, field: keyof PurchaseItemLine, val: any) => {
+    setPurchaseLines((prev) =>
+      prev.map((line, i) => (i === idx ? { ...line, [field]: val } : line))
+    );
+  };
+
+  const invoiceTotalAmount = purchaseLines.reduce(
+    (sum, line) => sum + (line.quantity || 0) * (line.costPerUnit || 0),
+    0
+  );
+
+  const handleCreateSupplier = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!supName.trim() || !supPhone.trim()) return;
-    setSaving(true);
+    setSavingSupplier(true);
     playSound("click");
 
     try {
@@ -174,11 +265,11 @@ export default function SuppliersPage() {
         body: JSON.stringify({
           name: supName.trim(),
           phone: supPhone.trim(),
-          company: supCompany.trim(),
-          category: supCategory,
-          address: supAddress.trim(),
+          company: supCompany.trim() || null,
+          category: supCategory.trim(),
+          address: supAddress.trim() || null,
           openingBalance: Number(supOpeningBal) || 0,
-          notes: supNotes.trim(),
+          notes: supNotes.trim() || null,
         }),
       });
 
@@ -186,39 +277,32 @@ export default function SuppliersPage() {
       if (res.ok && data.success) {
         playSound("success");
         setSuppliers((prev) => [data.supplier, ...prev]);
-        setInvSupplierId(data.supplier.id);
-        setPaySupplierId(data.supplier.id);
         setIsAddSupplierOpen(false);
         setSupName("");
         setSupPhone("");
+        setSupCompany("");
+        setSupAddress("");
         setSupOpeningBal("0");
+        setSupNotes("");
       } else {
         alert(data.error || "فشل إضافة المورد");
       }
     } catch (err) {
       console.error(err);
+      alert("حدث خطأ أثناء الاتصال بالخادم");
     } finally {
-      setSaving(false);
+      setSavingSupplier(false);
     }
   };
 
-  // 2. Add Purchase Invoice
-  const handleCreateInvoice = async (e: React.FormEvent) => {
+  const handleCreatePurchaseInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!invSupplierId || !invItemName.trim() || !invTotal) return;
-    setSaving(true);
+    if (!invSupplierId || invoiceTotalAmount <= 0) {
+      alert("يرجى اختيار المورد وإضافة بنود بمبالغ صحيحة");
+      return;
+    }
+    setSavingInvoice(true);
     playSound("click");
-
-    const items = [
-      {
-        name: invItemName.trim(),
-        category: invItemCategory,
-        quantity: Number(invQty) || 1,
-        unit: invUnit,
-        costPerUnit: Number(invCost) || 0,
-        total: Number(invTotal),
-      },
-    ];
 
     try {
       const res = await fetch("/api/purchases", {
@@ -226,35 +310,136 @@ export default function SuppliersPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           supplierId: invSupplierId,
-          items,
-          totalAmount: Number(invTotal),
+          items: purchaseLines,
+          totalAmount: invoiceTotalAmount,
           paidAmount: Number(invPaid) || 0,
           paymentMethod: invMethod,
-          recordedBy: currentUser?.name || "المايسترو",
           autoStock: invAutoStock,
+          notes: invNotes.trim() || null,
+          recordedBy: currentUser?.name || "المايسترو",
         }),
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
         playSound("success");
+        setInvoices((prev) => [data.invoice, ...prev]);
         setIsAddInvoiceOpen(false);
+        // Refresh supplier balances
         fetchAllData();
+        // Reset lines
+        setPurchaseLines([
+          { name: "", category: "كاميرات مراقبة وأجهزة تسجيل", unit: "قطعة", quantity: 1, costPerUnit: 0 },
+        ]);
+        setInvPaid("0");
+        setInvNotes("");
       } else {
-        alert(data.error || "فشل حفظ فاتورة المشتريات");
+        alert(data.error || "فشل حفظ فاتورة الشراء");
       }
     } catch (err) {
       console.error(err);
+      alert("حدث خطأ أثناء الاتصال بالخادم");
     } finally {
-      setSaving(false);
+      setSavingInvoice(false);
     }
   };
 
-  // 3. Add Payment
+  const handleOpenEditInvoice = (inv: PurchaseInvoice) => {
+    setPinAction(() => () => {
+      setEditingInvoice(inv);
+      try {
+        const parsed = typeof inv.items === "string" ? JSON.parse(inv.items) : inv.items;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setEditLines(
+            parsed.map((p: any) => ({
+              name: p.name || "",
+              category: p.category || "كاميرات وأجهزة تسجيل",
+              unit: p.unit || "قطعة",
+              quantity: Number(p.quantity || 1),
+              costPerUnit: Number(p.costPerUnit || p.unitCost || 0),
+            }))
+          );
+        } else {
+          setEditLines([
+            { name: "بند فاتورة", category: "عام", unit: "قطعة", quantity: 1, costPerUnit: inv.totalAmount },
+          ]);
+        }
+      } catch {
+        setEditLines([
+          { name: "بند فاتورة", category: "عام", unit: "قطعة", quantity: 1, costPerUnit: inv.totalAmount },
+        ]);
+      }
+      setEditPaid(inv.paidAmount.toString());
+      setEditMethod(inv.paymentMethod || "CASH");
+    });
+    setIsPinOpen(true);
+  };
+
+  const handleSaveEditInvoice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingInvoice) return;
+    setSavingEdit(true);
+    playSound("click");
+
+    const total = editLines.reduce(
+      (sum, l) => sum + (l.quantity || 0) * (l.costPerUnit || 0),
+      0
+    );
+
+    try {
+      const res = await fetch("/api/purchases", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editingInvoice.id,
+          items: editLines,
+          totalAmount: total,
+          paidAmount: Number(editPaid) || 0,
+          paymentMethod: editMethod,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        playSound("success");
+        setEditingInvoice(null);
+        fetchAllData();
+      } else {
+        alert(data.error || "فشل تعديل الفاتورة");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("حدث خطأ أثناء تعديل الفاتورة");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleDeleteInvoice = (id: string, invNum: string) => {
+    setPinAction(() => async () => {
+      if (!confirm(`هل أنت متأكد من حذف الفاتورة (#${invNum}) وتعديل رصيد المورد تلقائياً؟`)) return;
+      playSound("trash");
+      try {
+        const res = await fetch(`/api/purchases?id=${id}`, { method: "DELETE" });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          playSound("success");
+          setInvoices((prev) => prev.filter((i) => i.id !== id));
+          fetchAllData();
+        } else {
+          alert(data.error || "فشل حذف الفاتورة");
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
+    setIsPinOpen(true);
+  };
+
   const handleCreatePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!paySupplierId || !payAmount) return;
-    setSaving(true);
+    setSavingPayment(true);
     playSound("click");
 
     try {
@@ -265,7 +450,7 @@ export default function SuppliersPage() {
           supplierId: paySupplierId,
           amount: Number(payAmount),
           paymentMethod: payMethod,
-          notes: payNotes.trim(),
+          notes: payNotes.trim() || null,
           recordedBy: currentUser?.name || "المايسترو",
         }),
       });
@@ -273,876 +458,1149 @@ export default function SuppliersPage() {
       const data = await res.json();
       if (res.ok && data.success) {
         playSound("success");
+        setPayments((prev) => [data.payment, ...prev]);
         setIsAddPaymentOpen(false);
         setPayAmount("");
+        setPayNotes("");
         fetchAllData();
       } else {
-        alert(data.error || "فشل تسجيل سند الصرف");
+        alert(data.error || "فشل تسجيل سند السداد");
       }
     } catch (err) {
       console.error(err);
+      alert("حدث خطأ أثناء الاتصال بالخادم");
     } finally {
-      setSaving(false);
-    }
-  };
-
-  // 4. Add Return
-  const handleCreateReturn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!retSupplierId || !retItemName.trim() || !retRefund) return;
-    setSaving(true);
-    playSound("click");
-
-    const items = [
-      {
-        name: retItemName.trim(),
-        quantity: Number(retQty) || 1,
-        totalRefund: Number(retRefund),
-      },
-    ];
-
-    try {
-      const res = await fetch("/api/purchase-returns", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          supplierId: retSupplierId,
-          items,
-          totalRefund: Number(retRefund),
-          refundMethod: retMethod,
-          reason: retReason,
-          recordedBy: currentUser?.name || "المايسترو",
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        playSound("success");
-        setIsAddReturnOpen(false);
-        fetchAllData();
-      } else {
-        alert(data.error || "فشل تسجيل مرتجع المشتريات");
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Open Statement Modal
-  const handleOpenStatement = async (supplierId: string) => {
-    playSound("click");
-    try {
-      const res = await fetch(`/api/suppliers/${supplierId}`);
-      const data = await res.json();
-      if (res.ok && data.supplier) {
-        setStatementSupplier(data.supplier);
-      }
-    } catch (e) {
-      console.error(e);
+      setSavingPayment(false);
     }
   };
 
   // Calculations
-  const totalBalanceDue = suppliers.reduce((sum, s) => sum + (s.currentBalance || 0), 0);
-  const totalPurchasesSum = suppliers.reduce((sum, s) => sum + (s.totalPurchases || 0), 0);
-  const totalPaidSum = suppliers.reduce((sum, s) => sum + (s.totalPaid || 0), 0);
+  const totalDebtOnCompany = suppliers.reduce((sum, s) => sum + (s.currentBalance || 0), 0);
+  const totalPurchasesAll = suppliers.reduce((sum, s) => sum + (s.totalPurchases || 0), 0);
+  const totalPaidAll = suppliers.reduce((sum, s) => sum + (s.totalPaid || 0), 0);
 
   return (
     <ErpLayout activeItem="suppliers">
-      <div className="space-y-6">
-        {/* Header Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-zinc-900/80 border border-pink-500/20 p-5 rounded-2xl shadow-xl">
+      <div className="space-y-6 max-w-7xl mx-auto">
+        {/* Top Header Card */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-zinc-900/80 border border-cyan-500/20 p-5 rounded-2xl shadow-xl">
           <div className="flex items-center gap-3">
             <span className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
               <Handshake size={22} />
             </span>
             <div>
-              <h1 className="text-xl font-black font-serif text-cyan-400 font-bold">
-                نظام الموردين والمشتريات وكشوف الحسابات
+              <h1 className="text-xl font-bold font-serif text-cyan-400">
+                إدارة الموردين وفواتير الشراء والتوريدات
               </h1>
               <p className="text-xs text-zinc-400 mt-0.5">
-                متابعة حسابات الموردين، رصيد البداية، فواتير الشراء، سندات الصرف، ومرتجعات المشتريات
+                فواتير الشراء المجمعة متعددة البنود، كشوفات الحسابات المجمعة والتفصيلية، وسندات السداد
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
             <button
-              onClick={() => {
-                playSound("click");
-                setIsAddSupplierOpen(true);
-              }}
-              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 text-black font-bold text-xs shadow-md flex items-center gap-1.5 transition"
+              onClick={() => setIsAddInvoiceOpen(true)}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-black font-bold text-xs shadow-lg shadow-cyan-500/20 flex items-center gap-2 transition"
+            >
+              <Package size={15} />
+              <span>+ تسجيل فاتورة شراء جديدة</span>
+            </button>
+
+            <button
+              onClick={() => setIsAddSupplierOpen(true)}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 text-black font-bold text-xs shadow-lg shadow-amber-500/20 flex items-center gap-2 transition"
             >
               <Plus size={15} />
               <span>إضافة مورد جديد</span>
             </button>
 
             <button
-              onClick={() => {
-                playSound("click");
-                if (suppliers.length > 0) setInvSupplierId(suppliers[0].id);
-                setIsAddInvoiceOpen(true);
-              }}
-              className="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-cyan-300 text-xs font-bold border border-zinc-700 flex items-center gap-1.5 transition"
-            >
-              <Package size={15} />
-              <span>فاتورة شراء بضاعة 📦</span>
-            </button>
-
-            <button
-              onClick={() => {
-                playSound("click");
-                if (suppliers.length > 0) setPaySupplierId(suppliers[0].id);
-                setIsAddPaymentOpen(true);
-              }}
-              className="px-3.5 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-emerald-400 text-xs font-bold border border-zinc-700 flex items-center gap-1.5 transition"
+              onClick={() => setIsAddPaymentOpen(true)}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:brightness-110 text-white font-bold text-xs shadow-lg shadow-emerald-500/20 flex items-center gap-2 transition"
             >
               <DollarSign size={15} />
-              <span>سند سداد دفعة 💵</span>
+              <span>سند سداد لمورد</span>
             </button>
           </div>
         </div>
 
-        {/* 3 Metrics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-[#0e0b16] border border-pink-500/20 p-4 rounded-2xl flex items-center justify-between">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-[#0c0914] border border-cyan-500/20 rounded-2xl p-4 flex items-center justify-between">
             <div>
-              <span className="text-[11px] text-zinc-400">إجمالي المشتريات التراكمية</span>
-              <div className="font-serif font-black text-2xl text-zinc-100 mt-1">
-                {totalPurchasesSum.toLocaleString()} ج.م
-              </div>
+              <span className="text-[11px] text-zinc-400 font-medium">إجمالي المشتريات والتوريدات</span>
+              <h3 className="text-2xl font-black font-mono text-zinc-100 mt-1">
+                {totalPurchasesAll.toLocaleString()} <span className="text-xs font-normal text-zinc-400 font-sans">ج.م</span>
+              </h3>
             </div>
-            <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400">
-              <Package size={24} />
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+              <Package size={20} />
             </div>
           </div>
 
-          <div className="bg-[#0e0b16] border border-pink-500/20 p-4 rounded-2xl flex items-center justify-between">
+          <div className="bg-[#0c0914] border border-emerald-500/20 rounded-2xl p-4 flex items-center justify-between">
             <div>
-              <span className="text-[11px] text-zinc-400">إجمالي ما تم سداده للموردين</span>
-              <div className="font-serif font-black text-2xl text-emerald-400 mt-1">
-                {totalPaidSum.toLocaleString()} ج.م
-              </div>
+              <span className="text-[11px] text-zinc-400 font-medium">إجمالي المسدد للموردين</span>
+              <h3 className="text-2xl font-black font-mono text-emerald-400 mt-1">
+                {totalPaidAll.toLocaleString()} <span className="text-xs font-normal text-zinc-400 font-sans">ج.م</span>
+              </h3>
             </div>
-            <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-400">
-              <DollarSign size={24} />
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+              <TrendingUp size={20} />
             </div>
           </div>
 
-          <div className="bg-[#0e0b16] border border-pink-500/20 p-4 rounded-2xl flex items-center justify-between">
+          <div className="bg-[#0c0914] border border-rose-500/20 rounded-2xl p-4 flex items-center justify-between">
             <div>
-              <span className="text-[11px] text-zinc-400">الرصيد الحالي المستحق للموردين (آجل)</span>
-              <div
-                className={`font-serif font-black text-2xl mt-1 ${
-                  totalBalanceDue > 0 ? "text-cyan-400" : "text-emerald-400"
-                }`}
-              >
-                {totalBalanceDue.toLocaleString()} ج.م
-              </div>
+              <span className="text-[11px] text-zinc-400 font-medium">إجمالي الديون المستحقة للموردين</span>
+              <h3 className="text-2xl font-black font-mono text-rose-400 mt-1">
+                {totalDebtOnCompany.toLocaleString()} <span className="text-xs font-normal text-zinc-400 font-sans">ج.م</span>
+              </h3>
             </div>
-            <div className="p-3 rounded-xl bg-pink-500/20 text-cyan-300">
-              <Wallet size={24} />
+            <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
+              <TrendingDown size={20} />
             </div>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="flex items-center gap-2 border-b border-zinc-800 pb-3">
-          {[
-            { id: "suppliers", label: `دليل الموردين (${suppliers.length})`, icon: Handshake },
-            { id: "invoices", label: `فواتير الشراء والتوريد (${invoices.length})`, icon: Package },
-            { id: "payments", label: `سندات السداد والصرف (${payments.length})`, icon: DollarSign },
-            { id: "returns", label: `مرتجعات المشتريات (${returns.length})`, icon: RotateCcw },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  playSound("click");
-                  setActiveTab(tab.id as any);
-                }}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition ${
-                  isActive
-                    ? "bg-cyan-500 text-black shadow-md"
-                    : "bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800"
-                }`}
-              >
-                <Icon size={15} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
+        {/* Tabs Navigation */}
+        <div className="flex items-center gap-2 border-b border-zinc-800 pb-3 text-xs">
+          <button
+            onClick={() => setActiveTab("suppliers")}
+            className={`px-4 py-2 rounded-xl font-bold transition flex items-center gap-1.5 ${
+              activeTab === "suppliers"
+                ? "bg-cyan-500 text-black shadow-md shadow-cyan-500/20"
+                : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white"
+            }`}
+          >
+            <Handshake size={14} />
+            <span>دليل الموردين ({suppliers.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("invoices")}
+            className={`px-4 py-2 rounded-xl font-bold transition flex items-center gap-1.5 ${
+              activeTab === "invoices"
+                ? "bg-cyan-500 text-black shadow-md shadow-cyan-500/20"
+                : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white"
+            }`}
+          >
+            <Receipt size={14} />
+            <span>فواتير الشراء والتوريد ({invoices.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("payments")}
+            className={`px-4 py-2 rounded-xl font-bold transition flex items-center gap-1.5 ${
+              activeTab === "payments"
+                ? "bg-cyan-500 text-black shadow-md shadow-cyan-500/20"
+                : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white"
+            }`}
+          >
+            <DollarSign size={14} />
+            <span>سندات السداد والصرف ({payments.length})</span>
+          </button>
         </div>
 
-        {/* TAB 1: Suppliers List */}
+        {/* TAB 1: Suppliers Directory */}
         {activeTab === "suppliers" && (
-          <div className="bg-[#0c0914] border border-pink-500/20 rounded-2xl overflow-hidden shadow-xl">
-            {suppliers.length === 0 ? (
-              <div className="py-20 text-center text-zinc-500 text-xs">
-                لا يوجد موردين مسجلين، اضغط على زر "إضافة مورد جديد" بالأعلى للبدء
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-right text-xs">
-                  <thead className="bg-zinc-900/90 text-zinc-400 border-b border-zinc-800 text-[11px] font-bold">
-                    <tr>
-                      <th className="py-3 px-4">اسم المورد / الشركة</th>
-                      <th className="py-3 px-4">رقم الهاتف</th>
-                      <th className="py-3 px-4">التصنيف</th>
-                      <th className="py-3 px-4">رصيد أول المدة</th>
-                      <th className="py-3 px-4">إجمالي المشتريات</th>
-                      <th className="py-3 px-4">إجمالي المسدد</th>
-                      <th className="py-3 px-4">الرصيد المستحق الحالي</th>
-                      <th className="py-3 px-4 text-center">كشف الحساب</th>
+          <div className="bg-[#0c0914] border border-cyan-500/20 rounded-2xl overflow-hidden shadow-xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-right text-xs">
+                <thead className="bg-zinc-900/90 text-zinc-400 border-b border-zinc-800 text-[11px] font-bold">
+                  <tr>
+                    <th className="py-3 px-4">اسم المورد / المسؤول</th>
+                    <th className="py-3 px-4">الشركة / التوكيل</th>
+                    <th className="py-3 px-4">رقم الهاتف</th>
+                    <th className="py-3 px-4">التصنيف</th>
+                    <th className="py-3 px-4">إجمالي التوريدات</th>
+                    <th className="py-3 px-4">المسدد</th>
+                    <th className="py-3 px-4">الرصيد المستحق</th>
+                    <th className="py-3 px-4 text-center">كشف الحساب</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800/60">
+                  {suppliers.map((s) => (
+                    <tr key={s.id} className="hover:bg-zinc-900/40 transition-colors">
+                      <td className="py-3 px-4 font-bold text-zinc-100">
+                        {s.name}
+                      </td>
+                      <td className="py-3 px-4 text-zinc-400">
+                        {s.company || "—"}
+                      </td>
+                      <td className="py-3 px-4 font-mono font-bold text-cyan-300">
+                        {s.phone}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 text-[10px]">
+                          {s.category}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 font-mono text-zinc-200">
+                        {(s.totalPurchases || 0).toLocaleString()} ج.م
+                      </td>
+                      <td className="py-3 px-4 font-mono text-emerald-400">
+                        {(s.totalPaid || 0).toLocaleString()} ج.م
+                      </td>
+                      <td className="py-3 px-4 font-mono font-bold text-rose-400">
+                        {(s.currentBalance || 0).toLocaleString()} ج.م
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <button
+                          onClick={() => {
+                            setStatementSupplier(s);
+                            setStatementMode("summary");
+                          }}
+                          className="px-3 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs font-bold transition flex items-center gap-1 mx-auto"
+                        >
+                          <FileText size={13} />
+                          <span>كشف حساب</span>
+                        </button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-800/60">
-                    {suppliers.map((s) => (
-                      <tr key={s.id} className="hover:bg-zinc-900/40 transition-colors">
-                        <td className="py-3 px-4 font-bold text-zinc-200">
-                          <div>{s.name}</div>
-                          {s.company && (
-                            <span className="text-[10px] text-zinc-500">{s.company}</span>
-                          )}
-                        </td>
-
-                        <td className="py-3 px-4 font-mono font-bold text-cyan-300">
-                          {s.phone}
-                        </td>
-
-                        <td className="py-3 px-4">
-                          <span className="text-[10.5px] px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 border border-zinc-700">
-                            {s.category}
-                          </span>
-                        </td>
-
-                        <td className="py-3 px-4 font-mono text-zinc-400">
-                          {s.openingBalance.toLocaleString()} ج.م
-                        </td>
-
-                        <td className="py-3 px-4 font-mono font-bold text-zinc-200">
-                          {s.totalPurchases.toLocaleString()} ج.م
-                        </td>
-
-                        <td className="py-3 px-4 font-mono font-bold text-emerald-400">
-                          {s.totalPaid.toLocaleString()} ج.م
-                        </td>
-
-                        <td className="py-3 px-4">
-                          <span
-                            className={`font-mono font-black text-sm ${
-                              s.currentBalance > 0 ? "text-cyan-400" : "text-emerald-400"
-                            }`}
-                          >
-                            {s.currentBalance.toLocaleString()} ج.م
-                          </span>
-                        </td>
-
-                        <td className="py-3 px-4 text-center">
-                          <button
-                            onClick={() => handleOpenStatement(s.id)}
-                            className="px-3 py-1.5 rounded-xl bg-pink-500/20 hover:bg-pink-500/30 text-cyan-300 border border-pink-500/40 text-[11px] font-bold flex items-center justify-center gap-1 mx-auto transition"
-                          >
-                            <FileText size={13} />
-                            <span>كشف الحساب</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
-        {/* TAB 2: Purchase Invoices */}
+        {/* TAB 2: Purchase Invoices (Multi-Item Supported, View/Print, Edit) */}
         {activeTab === "invoices" && (
-          <div className="bg-[#0c0914] border border-pink-500/20 rounded-2xl overflow-hidden shadow-xl">
-            {invoices.length === 0 ? (
-              <div className="py-20 text-center text-zinc-500 text-xs">
-                لا توجد فواتير شراء مسجلة حتى الآن
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-right text-xs">
-                  <thead className="bg-zinc-900/90 text-zinc-400 border-b border-zinc-800 text-[11px] font-bold">
-                    <tr>
-                      <th className="py-3 px-4">رقم الفاتورة</th>
-                      <th className="py-3 px-4">المورد</th>
-                      <th className="py-3 px-4">الأصناف الموردة</th>
-                      <th className="py-3 px-4">إجمالي الفاتورة</th>
-                      <th className="py-3 px-4">المدفوع</th>
-                      <th className="py-3 px-4">المتبقي (آجل)</th>
-                      <th className="py-3 px-4">طريقة الدفع</th>
-                      <th className="py-3 px-4">التاريخ</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-800/60">
-                    {invoices.map((inv) => {
-                      let parsed: any[] = [];
-                      try {
-                        parsed = typeof inv.items === "string" ? JSON.parse(inv.items) : inv.items;
-                      } catch {
-                        parsed = [];
+          <div className="bg-[#0c0914] border border-cyan-500/20 rounded-2xl overflow-hidden shadow-xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-right text-xs">
+                <thead className="bg-zinc-900/90 text-zinc-400 border-b border-zinc-800 text-[11px] font-bold">
+                  <tr>
+                    <th className="py-3 px-4">رقم الفاتورة</th>
+                    <th className="py-3 px-4">المورد</th>
+                    <th className="py-3 px-4">الأصناف الموردة</th>
+                    <th className="py-3 px-4">إجمالي الفاتورة</th>
+                    <th className="py-3 px-4">المدفوع</th>
+                    <th className="py-3 px-4">المتبقي (آجل)</th>
+                    <th className="py-3 px-4">طريقة الدفع</th>
+                    <th className="py-3 px-4">التاريخ</th>
+                    <th className="py-3 px-4 text-center">إجراءات الفاتورة</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800/60">
+                  {invoices.map((inv) => {
+                    let itemsCount = 1;
+                    let summaryText = "";
+                    try {
+                      const parsed = JSON.parse(inv.items);
+                      if (Array.isArray(parsed)) {
+                        itemsCount = parsed.length;
+                        summaryText = parsed.map((p) => `${p.name || p.nameAr} × ${p.quantity} ${p.unit || "قطعة"}`).join("، ");
                       }
-                      return (
-                        <tr key={inv.id} className="hover:bg-zinc-900/40">
-                          <td className="py-3 px-4 font-mono font-bold text-cyan-400">
-                            #{inv.invoiceNumber}
-                          </td>
-                          <td className="py-3 px-4 font-bold text-zinc-200">
-                            {inv.supplier?.name}
-                          </td>
-                          <td className="py-3 px-4">
-                            {parsed.map((item, idx) => (
-                              <div key={idx} className="text-zinc-300 mb-1">
-                                <div>
-                                  <span className="font-bold">{item.name}</span> × <span className="font-bold text-cyan-300 font-mono">{item.quantity} {item.unit || "قطعة"}</span>
-                                </div>
-                                {item.description && (
-                                  <div className="text-[10.5px] text-zinc-400">
-                                    {item.description}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </td>
-                          <td className="py-3 px-4 font-mono font-bold text-zinc-100">
-                            {inv.totalAmount.toLocaleString()} ج.م
-                          </td>
-                          <td className="py-3 px-4 font-mono font-bold text-emerald-400">
-                            {inv.paidAmount.toLocaleString()} ج.م
-                          </td>
-                          <td className="py-3 px-4 font-mono font-bold text-cyan-400">
-                            {inv.remainingAmount.toLocaleString()} ج.م
-                          </td>
-                          <td className="py-3 px-4 text-zinc-300">
-                            {inv.paymentMethod}
-                          </td>
-                          <td className="py-3 px-4 text-zinc-500 font-mono text-[11px]">
-                            {new Date(inv.invoiceDate).toLocaleDateString("ar-EG")}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
+                    } catch {
+                      summaryText = inv.items;
+                    }
 
-        {/* TAB 3: Supplier Payments */}
-        {activeTab === "payments" && (
-          <div className="bg-[#0c0914] border border-pink-500/20 rounded-2xl overflow-hidden shadow-xl">
-            {payments.length === 0 ? (
-              <div className="py-20 text-center text-zinc-500 text-xs">
-                لا توجد سندات صرف مسجلة حتى الآن
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-right text-xs">
-                  <thead className="bg-zinc-900/90 text-zinc-400 border-b border-zinc-800 text-[11px] font-bold">
-                    <tr>
-                      <th className="py-3 px-4">رقم السند</th>
-                      <th className="py-3 px-4">المورد</th>
-                      <th className="py-3 px-4">المبلغ المسدد</th>
-                      <th className="py-3 px-4">طريقة السداد</th>
-                      <th className="py-3 px-4">ملاحظات</th>
-                      <th className="py-3 px-4">التاريخ</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-800/60">
-                    {payments.map((p) => (
-                      <tr key={p.id} className="hover:bg-zinc-900/40">
+                    return (
+                      <tr key={inv.id} className="hover:bg-zinc-900/40 transition-colors">
                         <td className="py-3 px-4 font-mono font-bold text-cyan-400">
-                          #{p.paymentNumber}
+                          {inv.invoiceNumber}
                         </td>
                         <td className="py-3 px-4 font-bold text-zinc-200">
-                          {p.supplier?.name}
+                          {inv.supplier?.name || "مورد"}
                         </td>
-                        <td className="py-3 px-4 font-mono font-black text-sm text-emerald-400">
-                          {p.amount.toLocaleString()} ج.م
+                        <td className="py-3 px-4 text-zinc-300 max-w-xs truncate" title={summaryText}>
+                          <span className="font-bold text-cyan-400">{itemsCount} بنود: </span>
+                          <span className="text-zinc-400">{summaryText}</span>
                         </td>
-                        <td className="py-3 px-4 text-zinc-300 font-bold">
-                          {p.paymentMethod === "INSTAPAY" ? "إنستاباي 📱" : "كاش 💵"}
+                        <td className="py-3 px-4 font-mono font-bold text-zinc-100">
+                          {inv.totalAmount.toLocaleString()} ج.م
                         </td>
-                        <td className="py-3 px-4 text-zinc-400 text-[11px]">
-                          {p.notes || "—"}
+                        <td className="py-3 px-4 font-mono text-emerald-400 font-bold">
+                          {inv.paidAmount.toLocaleString()} ج.م
                         </td>
-                        <td className="py-3 px-4 text-zinc-500 font-mono text-[11px]">
-                          {new Date(p.paymentDate).toLocaleDateString("ar-EG")}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* TAB 4: Purchase Returns */}
-        {activeTab === "returns" && (
-          <div className="bg-[#0c0914] border border-pink-500/20 rounded-2xl overflow-hidden shadow-xl">
-            {returns.length === 0 ? (
-              <div className="py-20 text-center text-zinc-500 text-xs">
-                لا توجد مرتجعات مشتريات مسجلة حتى الآن
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-right text-xs">
-                  <thead className="bg-zinc-900/90 text-zinc-400 border-b border-zinc-800 text-[11px] font-bold">
-                    <tr>
-                      <th className="py-3 px-4">رقم المرتجع</th>
-                      <th className="py-3 px-4">المورد</th>
-                      <th className="py-3 px-4">الأصناف المرتجعة</th>
-                      <th className="py-3 px-4">قيمة المرتجع</th>
-                      <th className="py-3 px-4">تسوية الاسترداد</th>
-                      <th className="py-3 px-4">سبب الإرجاع</th>
-                      <th className="py-3 px-4">التاريخ</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-800/60">
-                    {returns.map((ret) => (
-                      <tr key={ret.id} className="hover:bg-zinc-900/40">
-                        <td className="py-3 px-4 font-mono font-bold text-cyan-400">
-                          #{ret.returnNumber}
-                        </td>
-                        <td className="py-3 px-4 font-bold text-zinc-200">
-                          {ret.supplier?.name}
-                        </td>
-                        <td className="py-3 px-4 text-zinc-300">
-                          {ret.items}
-                        </td>
-                        <td className="py-3 px-4 font-mono font-bold text-red-400">
-                          {ret.totalRefund.toLocaleString()} ج.م
+                        <td className="py-3 px-4 font-mono text-rose-400 font-bold">
+                          {inv.remainingAmount.toLocaleString()} ج.م
                         </td>
                         <td className="py-3 px-4">
-                          <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 border border-zinc-700">
-                            {ret.refundMethod === "DEDUCT_BALANCE"
-                              ? "خصم من رصيد المورد"
-                              : "استرداد نقدي"}
+                          <span className="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 text-[10px]">
+                            {inv.paymentMethod}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-zinc-400 text-[11px]">
-                          {ret.reason}
-                        </td>
                         <td className="py-3 px-4 text-zinc-500 font-mono text-[11px]">
-                          {new Date(ret.createdAt).toLocaleDateString("ar-EG")}
+                          {new Date(inv.invoiceDate || inv.createdAt).toLocaleDateString("ar-EG")}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => setViewingInvoice(inv)}
+                              title="معاينة وطباعة الفاتورة A4"
+                              className="p-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 transition"
+                            >
+                              <Printer size={13} />
+                            </button>
+                            <button
+                              onClick={() => handleOpenEditInvoice(inv)}
+                              title="تعديل الفاتورة (محمي بالباسورد)"
+                              className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 transition"
+                            >
+                              <Edit2 size={13} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteInvoice(inv.id, inv.invoiceNumber)}
+                              title="حذف الفاتورة (محمي بالباسورد)"
+                              className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
-      </div>
 
-      {/* MODAL 1: Add Supplier */}
-      {isAddSupplierOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#120e1c] border border-cyan-500/30 rounded-2xl p-6 shadow-2xl relative text-xs">
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-800 mb-4">
-              <h3 className="text-base font-bold text-cyan-300 font-serif flex items-center gap-2">
+        {/* TAB 3: Payments */}
+        {activeTab === "payments" && (
+          <div className="bg-[#0c0914] border border-cyan-500/20 rounded-2xl overflow-hidden shadow-xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-right text-xs">
+                <thead className="bg-zinc-900/90 text-zinc-400 border-b border-zinc-800 text-[11px] font-bold">
+                  <tr>
+                    <th className="py-3 px-4">رقم السند</th>
+                    <th className="py-3 px-4">المورد</th>
+                    <th className="py-3 px-4">المبلغ المسدد</th>
+                    <th className="py-3 px-4">طريقة السداد</th>
+                    <th className="py-3 px-4">ملاحظات</th>
+                    <th className="py-3 px-4">التاريخ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800/60">
+                  {payments.map((p) => (
+                    <tr key={p.id} className="hover:bg-zinc-900/40 transition-colors">
+                      <td className="py-3 px-4 font-mono font-bold text-emerald-400">{p.paymentNumber}</td>
+                      <td className="py-3 px-4 font-bold text-zinc-200">{p.supplier?.name}</td>
+                      <td className="py-3 px-4 font-mono font-bold text-emerald-300">{p.amount.toLocaleString()} ج.م</td>
+                      <td className="py-3 px-4">{p.paymentMethod}</td>
+                      <td className="py-3 px-4 text-zinc-400">{p.notes || "—"}</td>
+                      <td className="py-3 px-4 font-mono text-zinc-500">{new Date(p.paymentDate).toLocaleDateString("ar-EG")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL 1: Add Supplier Modal with Custom Category */}
+        {isAddSupplierOpen && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-[#0f1422] border border-cyan-500/30 rounded-2xl w-full max-w-md p-6 shadow-2xl relative animate-fadeIn text-right text-slate-100">
+              <button onClick={() => setIsAddSupplierOpen(false)} className="absolute left-4 top-4 text-zinc-400 hover:text-white p-1">
+                <X size={18} />
+              </button>
+
+              <h3 className="font-bold text-base text-cyan-400 mb-4 flex items-center gap-2">
                 <Handshake size={18} />
                 <span>إضافة مورد / شريك توريد جديد</span>
               </h3>
-              <button
-                onClick={() => setIsAddSupplierOpen(false)}
-                className="p-1 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white"
-              >
-                <X size={16} />
-              </button>
-            </div>
 
-            <form onSubmit={handleAddSupplier} className="space-y-3">
-              <div>
-                <label className="block text-zinc-300 font-medium mb-1">اسم المورد أو المسؤول:</label>
-                <input
-                  type="text"
-                  required
-                  value={supName}
-                  onChange={(e) => setSupName(e.target.value)}
-                  placeholder="مثال: الشركة الهندسية للأنظمة الأمنية (وكيل داهوا / هيكفيجن)"
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-cyan-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+              <form onSubmit={handleCreateSupplier} className="space-y-3.5 text-xs">
                 <div>
-                  <label className="block text-zinc-300 font-medium mb-1">رقم الهاتف:</label>
+                  <label className="block text-zinc-300 font-medium mb-1">اسم المورد أو المسؤول *:</label>
                   <input
-                    type="tel"
+                    type="text"
                     required
-                    value={supPhone}
-                    onChange={(e) => setSupPhone(e.target.value)}
-                    placeholder="010xxxxxxxx"
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono"
+                    value={supName}
+                    onChange={(e) => setSupName(e.target.value)}
+                    placeholder="مثال: م إسماعيل / شركة بلو ستار"
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                   />
                 </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-zinc-300 font-medium mb-1">رقم الهاتف *:</label>
+                    <input
+                      type="text"
+                      required
+                      value={supPhone}
+                      onChange={(e) => setSupPhone(e.target.value)}
+                      placeholder="010xxxxxxxx"
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-zinc-300 font-medium mb-1">اسم الشركة / التوكيل:</label>
+                    <input
+                      type="text"
+                      value={supCompany}
+                      onChange={(e) => setSupCompany(e.target.value)}
+                      placeholder="blue star"
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-zinc-300 font-medium mb-1">التصنيف:</label>
-                  <select
+                  <label className="block text-zinc-300 font-medium mb-1">التصنيف (اختر أو اكتب جديد بالكامل):</label>
+                  <input
+                    type="text"
+                    list="supplier-cat-suggestions"
+                    required
                     value={supCategory}
                     onChange={(e) => setSupCategory(e.target.value)}
+                    placeholder="اكتب تصنيف جديد أو اختر..."
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
+                  />
+                  <datalist id="supplier-cat-suggestions">
+                    {DEFAULT_SUPPLIER_CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat} />
+                    ))}
+                  </datalist>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-zinc-300 font-medium mb-1">العنوان أو المقر:</label>
+                    <input
+                      type="text"
+                      value={supAddress}
+                      onChange={(e) => setSupAddress(e.target.value)}
+                      placeholder="طنطا / القاهرة"
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-zinc-300 font-medium mb-1">رصيد أول المدة (مديونية سابقة):</label>
+                    <input
+                      type="number"
+                      value={supOpeningBal}
+                      onChange={(e) => setSupOpeningBal(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-3 border-t border-zinc-800">
+                  <button
+                    type="submit"
+                    disabled={savingSupplier}
+                    className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 text-black font-bold text-xs"
                   >
-                    <option value="كاميرات مراقبة وأجهزة تسجيل">كاميرات مراقبة وأجهزة تسجيل (Dahua / Hikvision / Uniarch)</option>
-                    <option value="كابلات ومواسير ووصلات">كابلات شبكات ومحاور ووصلات BNC وجاكات باور</option>
-                    <option value="هارد ديسك وتخزين وراكات">هارد ديسك وتخزين وراكات تجميع RACK</option>
-                    <option value="باور سبلاي ومحولات">باور سبلاي ومحولات مركزية ومهمات كهرباء</option>
-                    <option value="شاشات عرض وأجهزة شبكات">شاشات مراقبة وسويتشات PoE وأجهزة شبكات</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-zinc-300 font-medium mb-1">اسم الشركة / المصنع:</label>
-                  <input
-                    type="text"
-                    value={supCompany}
-                    onChange={(e) => setSupCompany(e.target.value)}
-                    placeholder="الموزع المعتمد لأنظمة المراقبة (Dahua / Hikvision)"
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-zinc-300 font-medium mb-1">رصيد أول المدة (ج.م):</label>
-                  <input
-                    type="number"
-                    value={supOpeningBal}
-                    onChange={(e) => setSupOpeningBal(e.target.value)}
-                    placeholder="0"
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-zinc-300 font-medium mb-1">العنوان أو المقر:</label>
-                <input
-                  type="text"
-                  value={supAddress}
-                  onChange={(e) => setSupAddress(e.target.value)}
-                  placeholder="طنطا / القاهرة — سوق التكنولوجيا وموزعو الأنظمة الأمنية"
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-3 border-t border-zinc-800">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 text-black font-bold text-xs"
-                >
-                  {saving ? "جاري الإضافة..." : "حفظ المورد في الدليل 🤝"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsAddSupplierOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white"
-                >
-                  إلغاء
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 2: Add Purchase Invoice */}
-      {isAddInvoiceOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-[#120e1c] border border-cyan-500/30 rounded-2xl p-6 shadow-2xl relative text-xs">
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-800 mb-4">
-              <h3 className="text-base font-bold text-cyan-300 font-serif flex items-center gap-2">
-                <Package size={18} />
-                <span>تسجيل فاتورة شراء وتوريد بضاعة جديدة</span>
-              </h3>
-              <button
-                onClick={() => setIsAddInvoiceOpen(false)}
-                className="p-1 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreateInvoice} className="space-y-3">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-zinc-300 font-medium">المورد أو شريك التوريد *</label>
+                    {savingSupplier ? "جاري الحفظ..." : "حفظ المورد في الدليل"}
+                  </button>
                   <button
                     type="button"
-                    onClick={() => setIsAddSupplierOpen(true)}
-                    className="text-[11px] text-cyan-400 hover:underline flex items-center gap-1 font-bold"
+                    onClick={() => setIsAddSupplierOpen(false)}
+                    className="px-4 py-2.5 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white"
                   >
-                    <Plus size={12} />
-                    <span>+ إضافة مورد جديد</span>
+                    إلغاء
                   </button>
                 </div>
-                <select
-                  required
-                  value={invSupplierId}
-                  onChange={(e) => {
-                    if (e.target.value === "NEW") {
-                      setIsAddSupplierOpen(true);
-                    } else {
-                      setInvSupplierId(e.target.value);
-                    }
-                  }}
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-cyan-500"
-                >
-                  <option value="">-- اختر المورد المسجل --</option>
-                  <option value="NEW">➕ إضافة وتسجيل مورد جديد الآن...</option>
-                  {suppliers.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} ({s.company ? `${s.company} • ` : ""}{s.category})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              </form>
+            </div>
+          </div>
+        )}
 
-              <div className="grid grid-cols-2 gap-3">
+        {/* MODAL 2: Add Multi-Items Purchase Invoice Modal */}
+        {isAddInvoiceOpen && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-[#0f1422] border border-cyan-500/30 rounded-2xl w-full max-w-3xl p-6 shadow-2xl relative animate-fadeIn text-right text-slate-100 max-h-[90vh] overflow-y-auto">
+              <button onClick={() => setIsAddInvoiceOpen(false)} className="absolute left-4 top-4 text-zinc-400 hover:text-white p-1">
+                <X size={18} />
+              </button>
+
+              <h3 className="font-bold text-base text-cyan-400 mb-4 flex items-center gap-2">
+                <Package size={18} />
+                <span>تسجيل فاتورة شراء وتوريد بضاعة جديدة (متعددة البنود)</span>
+              </h3>
+
+              <form onSubmit={handleCreatePurchaseInvoice} className="space-y-4 text-xs">
+                {/* Supplier Selection */}
                 <div>
-                  <label className="block text-zinc-300 font-medium mb-1">اسم الصنف أو الخامة:</label>
-                  <input
-                    type="text"
-                    required
-                    value={invItemName}
-                    onChange={(e) => setInvItemName(e.target.value)}
-                    placeholder="مثال: كاميرا داهوا خارجي 2 ميجا Full Color / هارد 1 تيرا سيجيت"
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
-                  />
-                </div>
-                <div>
-                  <label className="block text-zinc-300 font-medium mb-1">تصنيف الخامة:</label>
+                  <label className="block text-zinc-300 font-medium mb-1">المورد أو شريك التوريد *:</label>
                   <select
-                    value={invItemCategory}
-                    onChange={(e) => setInvItemCategory(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
+                    required
+                    value={invSupplierId}
+                    onChange={(e) => setInvSupplierId(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                   >
-                    <option value="كاميرات مراقبة وأجهزة تسجيل">كاميرات مراقبة وأجهزة تسجيل</option>
-                    <option value="كابلات ومواسير ووصلات">كابلات شبكات ومواسير ووصلات</option>
-                    <option value="هارد ديسك وتخزين">هارد ديسك وتخزين وراكات</option>
-                    <option value="باور سبلاي ومحولات">باور سبلاي ومحولات ومستلزمات كهرباء</option>
-                    <option value="شاشات وأجهزة شبكات">شاشات عرض وأجهزة شبكات وسويتشات</option>
+                    <option value="">— اختر المورد من القائمة —</option>
+                    {suppliers.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.company || s.category})
+                      </option>
+                    ))}
                   </select>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-zinc-300 font-medium mb-1">وصف الصنف والمواصفات الفنية التفصيلية:</label>
-                <input
-                  type="text"
-                  value={invItemDesc}
-                  onChange={(e) => setInvItemDesc(e.target.value)}
-                  placeholder="مثال: دقة 2 ميجا Full Color ألوان ليلية، مايك داخلي، ضمان سنتين الوكيل"
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
-                />
-              </div>
+                {/* Multi-Item Lines */}
+                <div className="border border-zinc-800 rounded-xl p-3.5 bg-zinc-900/40 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-zinc-200 flex items-center gap-1.5">
+                      <Layers size={14} className="text-cyan-400" />
+                      <span>بنود الفاتورة المشتراة (أضف كل الأصناف في نفس الفاتورة):</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleAddPurchaseLine}
+                      className="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 text-[11px] font-bold flex items-center gap-1 transition"
+                    >
+                      <Plus size={12} />
+                      <span>+ إضافة بند آخر</span>
+                    </button>
+                  </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-zinc-300 font-medium mb-1">الكمية المشتراة:</label>
-                  <input
-                    type="number"
-                    required
-                    value={invQty}
-                    onChange={(e) => {
-                      setInvQty(e.target.value);
-                      const q = Number(e.target.value) || 0;
-                      const c = Number(invCost) || 0;
-                      const tot = q * c;
-                      setInvTotal(tot.toString());
-                      setInvPaid(tot.toString());
-                    }}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-zinc-300 font-medium mb-1">وحدة القياس:</label>
-                  <select
-                    value={invUnit}
-                    onChange={(e) => setInvUnit(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
-                  >
-                    <option value="قطعة">قطعة</option>
-                    <option value="لفة (305 متر)">لفة (305 متر)</option>
-                    <option value="متر">متر</option>
-                    <option value="طقم / كيت">طقم / كيت</option>
-                    <option value="كرتونة">كرتونة</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-zinc-300 font-medium mb-1">سعر تكلفة الوحدة (ج.م):</label>
-                  <input
-                    type="number"
-                    required
-                    value={invCost}
-                    onChange={(e) => {
-                      setInvCost(e.target.value);
-                      const q = Number(invQty) || 0;
-                      const c = Number(e.target.value) || 0;
-                      const tot = q * c;
-                      setInvTotal(tot.toString());
-                      setInvPaid(tot.toString());
-                    }}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono"
-                  />
-                </div>
-              </div>
+                  <div className="space-y-2.5">
+                    {purchaseLines.map((line, idx) => (
+                      <div key={idx} className="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
+                        <div className="flex items-center justify-between text-[11px] text-zinc-400 font-bold border-b border-zinc-800/60 pb-1.5">
+                          <span>بند رقم {idx + 1}</span>
+                          {purchaseLines.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemovePurchaseLine(idx)}
+                              className="text-rose-400 hover:text-rose-300 flex items-center gap-1"
+                            >
+                              <X size={12} />
+                              <span>حذف البند</span>
+                            </button>
+                          )}
+                        </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-zinc-300 font-medium mb-1">إجمالي الفاتورة (ج.م):</label>
-                  <input
-                    type="number"
-                    required
-                    value={invTotal}
-                    onChange={(e) => setInvTotal(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono font-bold text-cyan-400"
-                  />
-                </div>
-                <div>
-                  <label className="block text-zinc-300 font-medium mb-1">المبلغ المسدد الآن (ج.م):</label>
-                  <input
-                    type="number"
-                    value={invPaid}
-                    onChange={(e) => setInvPaid(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono text-emerald-400 font-bold"
-                  />
-                </div>
-                <div>
-                  <label className="block text-zinc-300 font-medium mb-1">طريقة الدفع:</label>
-                  <select
-                    value={invMethod}
-                    onChange={(e) => setInvMethod(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
-                  >
-                    <option value="CASH">كاش نقدي 💵</option>
-                    <option value="INSTAPAY">إنستاباي (InstaPay) 📱</option>
-                    <option value="BANK_TRANSFER">تحويل بنكي 🏦</option>
-                    <option value="DEFERRED">آجل بالكامل ⏳</option>
-                  </select>
-                </div>
-              </div>
+                        <div className="grid grid-cols-12 gap-2 items-center">
+                          <div className="col-span-12 sm:col-span-5">
+                            <label className="block text-[10px] text-zinc-400 mb-0.5">اسم الصنف أو الموديل *:</label>
+                            <input
+                              type="text"
+                              required
+                              value={line.name}
+                              onChange={(e) => handlePurchaseLineChange(idx, "name", e.target.value)}
+                              placeholder="مثال: لفة سلك rg 174 100y / كاميرا 2 ميجا"
+                              className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-200 text-xs"
+                            />
+                          </div>
 
-              <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-pink-500/20 text-zinc-300 flex justify-between items-center">
-                <span>المبلغ المتبقي كدين على الشركة للمورد:</span>
-                <span className="font-mono font-black text-cyan-400">
-                  {Math.max(0, (Number(invTotal) || 0) - (Number(invPaid) || 0))} ج.م
-                </span>
-              </div>
+                          <div className="col-span-6 sm:col-span-3">
+                            <label className="block text-[10px] text-zinc-400 mb-0.5">التصنيف:</label>
+                            <input
+                              type="text"
+                              list="supplier-cat-suggestions"
+                              value={line.category}
+                              onChange={(e) => handlePurchaseLineChange(idx, "category", e.target.value)}
+                              className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-200 text-xs"
+                            />
+                          </div>
 
-              <div className="pt-1">
-                <label className="flex items-center gap-2 cursor-pointer">
+                          <div className="col-span-6 sm:col-span-2">
+                            <label className="block text-[10px] text-zinc-400 mb-0.5">وحدة القياس:</label>
+                            <input
+                              type="text"
+                              list="units-list"
+                              value={line.unit}
+                              onChange={(e) => handlePurchaseLineChange(idx, "unit", e.target.value)}
+                              placeholder="لفة 100 متر..."
+                              className="w-full px-2.5 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-200 text-xs"
+                            />
+                          </div>
+
+                          <div className="col-span-6 sm:col-span-1">
+                            <label className="block text-[10px] text-zinc-400 mb-0.5">الكمية:</label>
+                            <input
+                              type="number"
+                              min="1"
+                              required
+                              value={line.quantity}
+                              onChange={(e) => handlePurchaseLineChange(idx, "quantity", Number(e.target.value))}
+                              className="w-full px-2 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono text-center text-xs"
+                            />
+                          </div>
+
+                          <div className="col-span-6 sm:col-span-1">
+                            <label className="block text-[10px] text-zinc-400 mb-0.5">التكلفة:</label>
+                            <input
+                              type="number"
+                              min="0"
+                              required
+                              value={line.costPerUnit}
+                              onChange={(e) => handlePurchaseLineChange(idx, "costPerUnit", Number(e.target.value))}
+                              className="w-full px-2 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono text-xs"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <datalist id="units-list">
+                    {COMMON_UNITS.map((u) => (
+                      <option key={u} value={u} />
+                    ))}
+                  </datalist>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-zinc-800 text-xs font-bold">
+                    <span className="text-zinc-400">إجمالي قيمة الفاتورة ({purchaseLines.length} بنود):</span>
+                    <span className="text-cyan-400 font-mono text-base">
+                      {invoiceTotalAmount.toLocaleString()} ج.م
+                    </span>
+                  </div>
+                </div>
+
+                {/* Payment Breakdown */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-zinc-300 font-medium mb-1">المبلغ المسدد الآن (ج.م):</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={invPaid}
+                      onChange={(e) => setInvPaid(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-emerald-400 font-mono font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-zinc-300 font-medium mb-1">المتبقي كدين على الشركة:</label>
+                    <div className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-800 text-rose-400 font-mono font-bold">
+                      {Math.max(0, invoiceTotalAmount - (Number(invPaid) || 0)).toLocaleString()} ج.م
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-zinc-300 font-medium mb-1">طريقة الدفع:</label>
+                    <select
+                      value={invMethod}
+                      onChange={(e) => setInvMethod(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
+                    >
+                      <option value="CASH">كاش نقدي 💵</option>
+                      <option value="INSTAPAY">إنستاباي / بنكي</option>
+                      <option value="DEFERRED">آجل بالكامل</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Auto stock */}
+                <div className="flex items-center gap-2 p-2.5 bg-zinc-900/60 rounded-xl border border-zinc-800">
                   <input
                     type="checkbox"
+                    id="auto-stock"
                     checked={invAutoStock}
                     onChange={(e) => setInvAutoStock(e.target.checked)}
-                    className="rounded bg-zinc-900 border-zinc-700 text-pink-500 focus:ring-0"
+                    className="rounded accent-cyan-500 w-4 h-4"
                   />
-                  <span className="text-zinc-200 font-medium">
-                    إضافة الكميات المشتراة إلى رصيد المخزن تلقائياً 📦
-                  </span>
-                </label>
-              </div>
+                  <label htmlFor="auto-stock" className="text-zinc-300 font-medium cursor-pointer text-xs">
+                    إضافة كميات البنود وتكلفتها إلى رصيد المخزن تلقائياً 📦
+                  </label>
+                </div>
 
-              <div className="flex gap-3 pt-3 border-t border-zinc-800">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 text-black font-bold text-xs"
-                >
-                  {saving ? "جاري الحفظ..." : "حفظ فاتورة الشراء وتحديث المخزون 📦"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsAddInvoiceOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white"
-                >
-                  إلغاء
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 3: Record Payment */}
-      {isAddPaymentOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#120e1c] border border-cyan-500/30 rounded-2xl p-6 shadow-2xl relative text-xs">
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-800 mb-4">
-              <h3 className="text-base font-bold text-emerald-400 font-serif flex items-center gap-2">
-                <DollarSign size={18} />
-                <span>سند صرف وسداد دفعة للمورد</span>
-              </h3>
-              <button
-                onClick={() => setIsAddPaymentOpen(false)}
-                className="p-1 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <form onSubmit={handleCreatePayment} className="space-y-3">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-zinc-300 font-medium">المورد المستفيد:</label>
+                <div className="flex gap-2 pt-3 border-t border-zinc-800">
+                  <button
+                    type="submit"
+                    disabled={savingInvoice}
+                    className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-black font-bold text-xs"
+                  >
+                    {savingInvoice ? "جاري الحفظ وتحديث المخزن..." : `حفظ فاتورة الشراء (${invoiceTotalAmount.toLocaleString()} ج.م)`}
+                  </button>
                   <button
                     type="button"
-                    onClick={() => setIsAddSupplierOpen(true)}
-                    className="text-[11px] text-emerald-400 hover:underline flex items-center gap-1 font-bold"
+                    onClick={() => setIsAddInvoiceOpen(false)}
+                    className="px-4 py-2.5 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white"
                   >
-                    <Plus size={12} />
-                    <span>+ إضافة مورد جديد</span>
+                    إلغاء
                   </button>
                 </div>
-                <select
-                  required
-                  value={paySupplierId}
-                  onChange={(e) => {
-                    if (e.target.value === "NEW") {
-                      setIsAddSupplierOpen(true);
-                    } else {
-                      setPaySupplierId(e.target.value);
-                    }
-                  }}
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-emerald-500"
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL 3: View & Print Purchase Invoice Modal (A4 Printable) */}
+        {viewingInvoice && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-[#0f1422] border border-cyan-500/30 rounded-2xl w-full max-w-2xl p-6 shadow-2xl relative animate-fadeIn text-right text-slate-100 max-h-[90vh] overflow-y-auto">
+              <button onClick={() => setViewingInvoice(null)} className="absolute left-4 top-4 text-zinc-400 hover:text-white p-1">
+                <X size={18} />
+              </button>
+
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-3 mb-4">
+                <div className="flex items-center gap-2 text-cyan-400 font-bold text-base">
+                  <Printer size={18} />
+                  <span>معاينة وطباعة فاتورة الشراء #{viewingInvoice.invoiceNumber}</span>
+                </div>
+                <button
+                  onClick={() => window.print()}
+                  className="px-3.5 py-1.5 rounded-xl bg-cyan-500 text-black font-bold text-xs flex items-center gap-1.5 hover:brightness-110 transition"
                 >
-                  <option value="">-- اختر المورد المستحق --</option>
-                  <option value="NEW">➕ إضافة وتسجيل مورد جديد الآن...</option>
-                  {suppliers.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} (المستحق: {s.currentBalance} ج.م)
-                    </option>
-                  ))}
-                </select>
+                  <Printer size={14} />
+                  <span>طباعة فورية A4</span>
+                </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* Printable Invoice Sheet */}
+              <div className="bg-zinc-950 p-6 rounded-2xl border border-zinc-800 space-y-4 text-xs">
+                <div className="flex items-start justify-between border-b border-zinc-800 pb-3">
+                  <div>
+                    <h2 className="font-bold text-lg text-cyan-400">دي سي سمارت — للأنظمة الأمنية</h2>
+                    <p className="text-zinc-400 text-[11px]">طنطا — الغربية | هاتف: 01008657085</p>
+                    <p className="text-zinc-500 text-[10px]">إذن استلام وتوريد بضاعة مشتراة</p>
+                  </div>
+                  <div className="text-left font-mono text-zinc-300">
+                    <p className="font-bold text-cyan-300 text-sm">{viewingInvoice.invoiceNumber}</p>
+                    <p className="text-[11px] text-zinc-400">{new Date(viewingInvoice.invoiceDate || viewingInvoice.createdAt).toLocaleDateString("ar-EG")}</p>
+                  </div>
+                </div>
+
+                <div className="bg-zinc-900/60 p-3 rounded-xl border border-zinc-800 flex justify-between">
+                  <div>
+                    <span className="text-zinc-400">المورد: </span>
+                    <span className="font-bold text-zinc-100">{viewingInvoice.supplier?.name}</span>
+                    {viewingInvoice.supplier?.company && (
+                      <span className="text-zinc-400"> ({viewingInvoice.supplier.company})</span>
+                    )}
+                  </div>
+                  <div className="font-mono text-zinc-300">
+                    <span>الهاتف: </span>
+                    <span>{viewingInvoice.supplier?.phone}</span>
+                  </div>
+                </div>
+
+                {/* Items Table */}
+                <table className="w-full text-right text-xs">
+                  <thead className="bg-zinc-900 text-zinc-400 border-b border-zinc-800">
+                    <tr>
+                      <th className="py-2 px-3">م</th>
+                      <th className="py-2 px-3">الصنف / الخامة</th>
+                      <th className="py-2 px-3">التصنيف</th>
+                      <th className="py-2 px-3">الوحدة</th>
+                      <th className="py-2 px-3">الكمية</th>
+                      <th className="py-2 px-3">سعر الوحدة</th>
+                      <th className="py-2 px-3">الإجمالي</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-800/60">
+                    {(() => {
+                      try {
+                        const parsed = JSON.parse(viewingInvoice.items);
+                        if (Array.isArray(parsed)) {
+                          return parsed.map((itm: any, idx: number) => (
+                            <tr key={idx}>
+                              <td className="py-2 px-3 font-mono">{idx + 1}</td>
+                              <td className="py-2 px-3 font-bold text-zinc-200">{itm.name || itm.nameAr}</td>
+                              <td className="py-2 px-3 text-zinc-400">{itm.category || "—"}</td>
+                              <td className="py-2 px-3 text-zinc-400">{itm.unit || "قطعة"}</td>
+                              <td className="py-2 px-3 font-mono font-bold text-cyan-300">{itm.quantity}</td>
+                              <td className="py-2 px-3 font-mono">{(itm.costPerUnit || itm.unitCost || 0).toLocaleString()} ج.م</td>
+                              <td className="py-2 px-3 font-mono font-bold text-zinc-100">
+                                {(itm.quantity * (itm.costPerUnit || itm.unitCost || 0)).toLocaleString()} ج.م
+                              </td>
+                            </tr>
+                          ));
+                        }
+                      } catch {}
+                      return (
+                        <tr>
+                          <td colSpan={7} className="py-2 px-3 text-zinc-300">
+                            {viewingInvoice.items}
+                          </td>
+                        </tr>
+                      );
+                    })()}
+                  </tbody>
+                </table>
+
+                {/* Invoice Footer Totals */}
+                <div className="border-t border-zinc-800 pt-3 flex justify-end">
+                  <div className="w-64 space-y-1.5 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-zinc-400">إجمالي الفاتورة:</span>
+                      <span className="font-mono font-bold text-zinc-100">{viewingInvoice.totalAmount.toLocaleString()} ج.م</span>
+                    </div>
+                    <div className="flex justify-between text-emerald-400">
+                      <span>المدفوع نقداً:</span>
+                      <span className="font-mono font-bold">{viewingInvoice.paidAmount.toLocaleString()} ج.م</span>
+                    </div>
+                    <div className="flex justify-between text-rose-400 border-t border-zinc-800 pt-1 font-bold">
+                      <span>المتبقي (آجل):</span>
+                      <span className="font-mono">{viewingInvoice.remainingAmount.toLocaleString()} ج.م</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL 4: Edit Purchase Invoice Modal */}
+        {editingInvoice && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-[#0f1422] border border-blue-500/30 rounded-2xl w-full max-w-2xl p-6 shadow-2xl relative animate-fadeIn text-right text-slate-100 max-h-[90vh] overflow-y-auto">
+              <button onClick={() => setEditingInvoice(null)} className="absolute left-4 top-4 text-zinc-400 hover:text-white p-1">
+                <X size={18} />
+              </button>
+
+              <h3 className="font-bold text-base text-blue-400 mb-4 flex items-center gap-2">
+                <Edit2 size={18} />
+                <span>تعديل فاتورة الشراء #{editingInvoice.invoiceNumber}</span>
+              </h3>
+
+              <form onSubmit={handleSaveEditInvoice} className="space-y-4 text-xs">
+                <div className="space-y-2">
+                  {editLines.map((line, idx) => (
+                    <div key={idx} className="bg-zinc-950 p-2.5 rounded-xl border border-zinc-800 grid grid-cols-12 gap-2 items-center">
+                      <div className="col-span-5">
+                        <label className="block text-[10px] text-zinc-400 mb-0.5">الصنف:</label>
+                        <input
+                          type="text"
+                          required
+                          value={line.name}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setEditLines((prev) => prev.map((l, i) => (i === idx ? { ...l, name: val } : l)));
+                          }}
+                          className="w-full px-2 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-200 text-xs"
+                        />
+                      </div>
+                      <div className="col-span-3">
+                        <label className="block text-[10px] text-zinc-400 mb-0.5">الوحدة:</label>
+                        <input
+                          type="text"
+                          value={line.unit}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setEditLines((prev) => prev.map((l, i) => (i === idx ? { ...l, unit: val } : l)));
+                          }}
+                          className="w-full px-2 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-200 text-xs"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-[10px] text-zinc-400 mb-0.5">الكمية:</label>
+                        <input
+                          type="number"
+                          value={line.quantity}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setEditLines((prev) => prev.map((l, i) => (i === idx ? { ...l, quantity: val } : l)));
+                          }}
+                          className="w-full px-2 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-200 text-center font-mono text-xs"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-[10px] text-zinc-400 mb-0.5">التكلفة:</label>
+                        <input
+                          type="number"
+                          value={line.costPerUnit}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setEditLines((prev) => prev.map((l, i) => (i === idx ? { ...l, costPerUnit: val } : l)));
+                          }}
+                          className="w-full px-2 py-1.5 rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono text-xs"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-zinc-300 font-medium mb-1">المسدد نقداً (ج.م):</label>
+                    <input
+                      type="number"
+                      value={editPaid}
+                      onChange={(e) => setEditPaid(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-emerald-400 font-mono font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-zinc-300 font-medium mb-1">طريقة الدفع:</label>
+                    <select
+                      value={editMethod}
+                      onChange={(e) => setEditMethod(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
+                    >
+                      <option value="CASH">كاش نقدي</option>
+                      <option value="INSTAPAY">إنستاباي</option>
+                      <option value="DEFERRED">آجل</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 pt-3 border-t border-zinc-800">
+                  <button
+                    type="submit"
+                    disabled={savingEdit}
+                    className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold text-xs"
+                  >
+                    {savingEdit ? "جاري حفظ التعديل..." : "تأكيد التعديل وتحديث الحسابات"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingInvoice(null)}
+                    className="px-4 py-2.5 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white"
+                  >
+                    إلغاء
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL 5: Supplier Statement (Combined vs Detailed) */}
+        {statementSupplier && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-[#0f1422] border border-cyan-500/30 rounded-2xl w-full max-w-3xl p-6 shadow-2xl relative animate-fadeIn text-right text-slate-100 max-h-[90vh] overflow-y-auto">
+              <button onClick={() => setStatementSupplier(null)} className="absolute left-4 top-4 text-zinc-400 hover:text-white p-1">
+                <X size={18} />
+              </button>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-zinc-800 pb-4 mb-4">
                 <div>
-                  <label className="block text-zinc-300 font-medium mb-1">المبلغ المسدد (ج.م):</label>
+                  <h3 className="font-bold text-base text-cyan-400 flex items-center gap-2">
+                    <FileSpreadsheet size={18} />
+                    <span>كشف حساب المورد: {statementSupplier.name}</span>
+                  </h3>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    هاتف: {statementSupplier.phone} • {statementSupplier.company || statementSupplier.category}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center bg-zinc-900 border border-zinc-800 p-0.5 rounded-xl text-xs font-bold">
+                    <button
+                      onClick={() => setStatementMode("summary")}
+                      className={`px-3 py-1.5 rounded-lg transition ${
+                        statementMode === "summary" ? "bg-cyan-500 text-black shadow-sm" : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      كشف حساب مجمع
+                    </button>
+                    <button
+                      onClick={() => setStatementMode("detailed")}
+                      className={`px-3 py-1.5 rounded-lg transition ${
+                        statementMode === "detailed" ? "bg-cyan-500 text-black shadow-sm" : "text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      كشف حساب تفصيلي بالفواتير
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={() => window.print()}
+                    className="p-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 transition"
+                    title="طباعة كشف الحساب"
+                  >
+                    <Printer size={15} />
+                  </button>
+                </div>
+              </div>
+
+              {/* 4 Summary Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 text-xs">
+                <div className="bg-zinc-900/60 p-3 rounded-xl border border-zinc-800">
+                  <span className="text-zinc-400 block text-[10.5px]">رصيد أول المدة:</span>
+                  <span className="font-mono font-bold text-zinc-200 text-sm mt-0.5 block">
+                    {(statementSupplier.openingBalance || 0).toLocaleString()} ج.م
+                  </span>
+                </div>
+                <div className="bg-zinc-900/60 p-3 rounded-xl border border-zinc-800">
+                  <span className="text-zinc-400 block text-[10.5px]">إجمالي المشتريات:</span>
+                  <span className="font-mono font-bold text-zinc-200 text-sm mt-0.5 block">
+                    {(statementSupplier.totalPurchases || 0).toLocaleString()} ج.م
+                  </span>
+                </div>
+                <div className="bg-zinc-900/60 p-3 rounded-xl border border-zinc-800">
+                  <span className="text-zinc-400 block text-[10.5px]">إجمالي المسدد:</span>
+                  <span className="font-mono font-bold text-emerald-400 text-sm mt-0.5 block">
+                    {(statementSupplier.totalPaid || 0).toLocaleString()} ج.م
+                  </span>
+                </div>
+                <div className="bg-cyan-950/40 p-3 rounded-xl border border-cyan-500/40">
+                  <span className="text-cyan-300 block text-[10.5px] font-bold">الرصيد المستحق:</span>
+                  <span className="font-mono font-bold text-cyan-400 text-sm mt-0.5 block">
+                    {(statementSupplier.currentBalance || 0).toLocaleString()} ج.م
+                  </span>
+                </div>
+              </div>
+
+              {/* Mode 1: Summary List */}
+              {statementMode === "summary" && (
+                <div className="space-y-4 text-xs">
+                  <div>
+                    <h4 className="font-bold text-zinc-300 mb-2 flex items-center justify-between">
+                      <span>سجل فواتير التوريد:</span>
+                      <span className="text-zinc-500 font-mono">{(statementSupplier.purchases || []).length} فاتورة</span>
+                    </h4>
+                    <div className="space-y-1.5">
+                      {(statementSupplier.purchases || []).map((inv: any) => (
+                        <div key={inv.id} className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-900/70 border border-zinc-800">
+                          <div>
+                            <span className="font-mono font-bold text-cyan-400">فاتورة #{inv.invoiceNumber}</span>
+                            <span className="text-zinc-500 text-[10px] mr-2">{new Date(inv.invoiceDate || inv.createdAt).toLocaleDateString("ar-EG")}</span>
+                          </div>
+                          <div className="font-mono">
+                            <span className="text-zinc-100 font-bold">{inv.totalAmount.toLocaleString()} ج.م </span>
+                            <span className="text-emerald-400 text-[11px]">(سدد: {inv.paidAmount.toLocaleString()})</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-zinc-300 mb-2 flex items-center justify-between">
+                      <span>سجل سندات الدفع والتحويل:</span>
+                      <span className="text-zinc-500 font-mono">{(statementSupplier.payments || []).length} سند</span>
+                    </h4>
+                    <div className="space-y-1.5">
+                      {(statementSupplier.payments || []).map((pay: any) => (
+                        <div key={pay.id} className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-900/70 border border-zinc-800">
+                          <div>
+                            <span className="font-mono font-bold text-emerald-400">سند #{pay.paymentNumber}</span>
+                            <span className="text-zinc-500 text-[10px] mr-2">{new Date(pay.paymentDate).toLocaleDateString("ar-EG")}</span>
+                          </div>
+                          <div className="font-mono font-bold text-emerald-400">
+                            {pay.amount.toLocaleString()} ج.م
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Mode 2: Detailed Itemized Ledger */}
+              {statementMode === "detailed" && (
+                <div className="space-y-3 text-xs">
+                  <h4 className="font-bold text-cyan-300 flex items-center gap-1.5">
+                    <ListOrdered size={14} />
+                    <span>كشف الحركات التفصيلي ببنود الفواتير:</span>
+                  </h4>
+
+                  <div className="border border-zinc-800 rounded-xl overflow-hidden">
+                    <table className="w-full text-right text-xs">
+                      <thead className="bg-zinc-900 text-zinc-400 border-b border-zinc-800 text-[11px]">
+                        <tr>
+                          <th className="py-2.5 px-3">التاريخ</th>
+                          <th className="py-2.5 px-3">البيان / الفاتورة</th>
+                          <th className="py-2.5 px-3">البنود المشحونة بالتفصيل</th>
+                          <th className="py-2.5 px-3 text-left">مدين (توريد)</th>
+                          <th className="py-2.5 px-3 text-left">دائن (مسدد)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-800/60">
+                        {(statementSupplier.purchases || []).map((inv: any) => {
+                          let lines: any[] = [];
+                          try {
+                            lines = typeof inv.items === "string" ? JSON.parse(inv.items) : inv.items;
+                          } catch {}
+
+                          return (
+                            <tr key={inv.id} className="hover:bg-zinc-900/30">
+                              <td className="py-2.5 px-3 font-mono text-zinc-400 text-[11px]">
+                                {new Date(inv.invoiceDate || inv.createdAt).toLocaleDateString("ar-EG")}
+                              </td>
+                              <td className="py-2.5 px-3 font-mono font-bold text-cyan-400">
+                                فاتورة #{inv.invoiceNumber}
+                              </td>
+                              <td className="py-2.5 px-3 text-zinc-300">
+                                {Array.isArray(lines) && lines.length > 0 ? (
+                                  <div className="space-y-1">
+                                    {lines.map((l: any, i: number) => (
+                                      <div key={i} className="text-[11px]">
+                                        <span className="font-bold text-zinc-100">• {l.name || l.nameAr}</span>
+                                        <span className="text-zinc-400 font-mono mr-1">
+                                          (×{l.quantity} {l.unit || "قطعة"} بسعر {l.costPerUnit || l.unitCost} ج.م)
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <span>{inv.items}</span>
+                                )}
+                              </td>
+                              <td className="py-2.5 px-3 font-mono font-bold text-zinc-100 text-left">
+                                {inv.totalAmount.toLocaleString()} ج.م
+                              </td>
+                              <td className="py-2.5 px-3 font-mono font-bold text-emerald-400 text-left">
+                                {inv.paidAmount.toLocaleString()} ج.م
+                              </td>
+                            </tr>
+                          );
+                        })}
+
+                        {(statementSupplier.payments || []).map((pay: any) => (
+                          <tr key={pay.id} className="bg-emerald-950/10">
+                            <td className="py-2.5 px-3 font-mono text-zinc-400 text-[11px]">
+                              {new Date(pay.paymentDate).toLocaleDateString("ar-EG")}
+                            </td>
+                            <td className="py-2.5 px-3 font-mono font-bold text-emerald-400">
+                              سند سداد #{pay.paymentNumber}
+                            </td>
+                            <td className="py-2.5 px-3 text-zinc-300">
+                              دفع نقدي / تحويل بنكي للمورد ({pay.notes || "سداد دفعة حساب"})
+                            </td>
+                            <td className="py-2.5 px-3 text-left">—</td>
+                            <td className="py-2.5 px-3 font-mono font-bold text-emerald-400 text-left">
+                              {pay.amount.toLocaleString()} ج.م
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* MODAL 6: Add Payment Modal */}
+        {isAddPaymentOpen && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-[#0f1422] border border-emerald-500/30 rounded-2xl w-full max-w-md p-6 shadow-2xl relative animate-fadeIn text-right text-slate-100">
+              <button onClick={() => setIsAddPaymentOpen(false)} className="absolute left-4 top-4 text-zinc-400 hover:text-white p-1">
+                <X size={18} />
+              </button>
+
+              <h3 className="font-bold text-base text-emerald-400 mb-4 flex items-center gap-2">
+                <DollarSign size={18} />
+                <span>تسجيل سند سداد وصرف لمورد</span>
+              </h3>
+
+              <form onSubmit={handleCreatePayment} className="space-y-3.5 text-xs">
+                <div>
+                  <label className="block text-zinc-300 font-medium mb-1">المورد المستلم *:</label>
+                  <select
+                    required
+                    value={paySupplierId}
+                    onChange={(e) => setPaySupplierId(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
+                  >
+                    <option value="">— اختر المورد —</option>
+                    {suppliers.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} (مستحق له: {s.currentBalance.toLocaleString()} ج.م)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-zinc-300 font-medium mb-1">المبلغ المسدد (ج.م) *:</label>
                   <input
                     type="number"
                     required
+                    min="1"
                     value={payAmount}
                     onChange={(e) => setPayAmount(e.target.value)}
-                    placeholder="1000"
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono font-bold text-emerald-400"
+                    placeholder="مثال: 5000"
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-emerald-400 font-mono font-bold text-base"
                   />
                 </div>
+
                 <div>
                   <label className="block text-zinc-300 font-medium mb-1">طريقة السداد:</label>
                   <select
@@ -1150,165 +1608,55 @@ export default function SuppliersPage() {
                     onChange={(e) => setPayMethod(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
                   >
-                    <option value="INSTAPAY">إنستاباي (InstaPay) 📱</option>
-                    <option value="CASH">كاش نقدي 💵</option>
+                    <option value="CASH">كاش نقدي من الخزينة 💵</option>
+                    <option value="INSTAPAY">إنستاباي / فودافون كاش 📱</option>
                     <option value="BANK_TRANSFER">تحويل بنكي 🏦</option>
                   </select>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-zinc-300 font-medium mb-1">ملاحظات أو رقم التحويل:</label>
-                <input
-                  type="text"
-                  value={payNotes}
-                  onChange={(e) => setPayNotes(e.target.value)}
-                  placeholder="رقم مرجع إنستاباي أو إيصال البنك"
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
-                />
-              </div>
+                <div>
+                  <label className="block text-zinc-300 font-medium mb-1">ملاحظات السند:</label>
+                  <input
+                    type="text"
+                    value={payNotes}
+                    onChange={(e) => setPayNotes(e.target.value)}
+                    placeholder="دفعة تحت الحساب / سداد فاتورة رقم..."
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
+                  />
+                </div>
 
-              <div className="flex gap-3 pt-3 border-t border-zinc-800">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:brightness-110 text-black font-bold text-xs"
-                >
-                  {saving ? "جاري الحفظ..." : "تسجيل سند السداد وخصم المديونية 💵"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsAddPaymentOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white"
-                >
-                  إلغاء
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 4: Supplier Statement of Account (كشف حساب المورد) */}
-      {statementSupplier && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl bg-[#120e1c] border border-cyan-500/30 rounded-2xl p-6 shadow-2xl relative text-xs max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-800 mb-4">
-              <div>
-                <h3 className="text-base font-black text-cyan-400 font-bold font-serif flex items-center gap-2">
-                  <span>كشف حساب المورد: {statementSupplier.name}</span>
-                </h3>
-                <p className="text-[11px] text-zinc-400 mt-0.5">
-                  هاتف: {statementSupplier.phone} • {statementSupplier.company || statementSupplier.category}
-                </p>
-              </div>
-              <button
-                onClick={() => setStatementSupplier(null)}
-                className="p-1 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            {/* Financial Status Summary */}
-            <div className="grid grid-cols-4 gap-3 mb-4 text-center">
-              <div className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800">
-                <span className="text-[10px] text-zinc-400 block">رصيد أول المدة:</span>
-                <span className="font-mono font-bold text-zinc-300">
-                  {statementSupplier.openingBalance} ج.م
-                </span>
-              </div>
-              <div className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800">
-                <span className="text-[10px] text-zinc-400 block">إجمالي المشتريات:</span>
-                <span className="font-mono font-bold text-zinc-200">
-                  {statementSupplier.totalPurchases} ج.م
-                </span>
-              </div>
-              <div className="p-2.5 rounded-xl bg-zinc-900 border border-zinc-800">
-                <span className="text-[10px] text-zinc-400 block">إجمالي المسدد:</span>
-                <span className="font-mono font-bold text-emerald-400">
-                  {statementSupplier.totalPaid} ج.م
-                </span>
-              </div>
-              <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30">
-                <span className="text-[10px] text-cyan-300 block font-bold">الرصيد المستحق:</span>
-                <span className="font-mono font-black text-cyan-400 text-sm">
-                  {statementSupplier.currentBalance} ج.م
-                </span>
-              </div>
-            </div>
-
-            {/* Invoices List */}
-            <div className="space-y-3">
-              <h4 className="font-serif font-bold text-xs text-zinc-200 border-b border-zinc-800 pb-1 flex items-center justify-between">
-                <span>سجل فواتير التوريد</span>
-                <span className="text-zinc-500">{(statementSupplier.purchases || []).length} فاتورة</span>
-              </h4>
-              <div className="divide-y divide-zinc-800/60 rounded-xl bg-black/40 border border-zinc-800 p-2">
-                {(statementSupplier.purchases || []).length === 0 ? (
-                  <div className="py-4 text-center text-zinc-600">لا توجد فواتير</div>
-                ) : (
-                  (statementSupplier.purchases || []).map((inv: any) => (
-                    <div key={inv.id} className="py-2 flex justify-between items-center">
-                      <div>
-                        <div className="font-bold text-zinc-200">فاتورة #{inv.invoiceNumber}</div>
-                        <div className="text-[10px] text-zinc-500">
-                          {new Date(inv.invoiceDate).toLocaleDateString("ar-EG")}
-                        </div>
-                      </div>
-                      <div className="text-left font-mono">
-                        <div className="font-bold text-zinc-200">{inv.totalAmount} ج.م</div>
-                        <div className="text-[10px] text-emerald-400">سدد: {inv.paidAmount} ج.م</div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* Payments List */}
-              <h4 className="font-serif font-bold text-xs text-zinc-200 border-b border-zinc-800 pb-1 flex items-center justify-between pt-2">
-                <span>سجل سندات الدفع والتحويل</span>
-                <span className="text-zinc-500">{(statementSupplier.payments || []).length} سند</span>
-              </h4>
-              <div className="divide-y divide-zinc-800/60 rounded-xl bg-black/40 border border-zinc-800 p-2">
-                {(statementSupplier.payments || []).length === 0 ? (
-                  <div className="py-4 text-center text-zinc-600">لا توجد سندات سداد</div>
-                ) : (
-                  (statementSupplier.payments || []).map((pay: any) => (
-                    <div key={pay.id} className="py-2 flex justify-between items-center">
-                      <div>
-                        <div className="font-bold text-emerald-400">سند صرف #{pay.paymentNumber}</div>
-                        <div className="text-[10px] text-zinc-500">
-                          {pay.paymentMethod} • {new Date(pay.paymentDate).toLocaleDateString("ar-EG")}
-                        </div>
-                      </div>
-                      <div className="text-left font-mono font-bold text-emerald-400">
-                        -{pay.amount} ج.م
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 mt-5 pt-3 border-t border-zinc-800">
-              <button
-                onClick={() => window.print()}
-                className="px-4 py-2 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-zinc-200 flex items-center gap-1.5"
-              >
-                <Printer size={14} />
-                <span>طباعة كشف الحساب</span>
-              </button>
-              <button
-                onClick={() => setStatementSupplier(null)}
-                className="px-4 py-2 rounded-xl bg-cyan-500 text-black font-bold"
-              >
-                إغلاق
-              </button>
+                <div className="flex gap-2 pt-3 border-t border-zinc-800">
+                  <button
+                    type="submit"
+                    disabled={savingPayment}
+                    className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:brightness-110 text-white font-bold text-xs"
+                  >
+                    {savingPayment ? "جاري السداد وتعديل الرصيد..." : "تأكيد سند السداد"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsAddPaymentOpen(false)}
+                    className="px-4 py-2.5 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white"
+                  >
+                    إلغاء
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Master Security PIN Modal */}
+        <SecurityPinModal
+          isOpen={isPinOpen}
+          onClose={() => setIsPinOpen(false)}
+          onSuccess={() => {
+            if (pinAction) pinAction();
+          }}
+          title="تأكيد بصلاحية الإدارة (Master PIN)"
+          actionDescription="تعديل فواتير التوريد أو حذفها يتطلب إدخال رمز أمان الإدارة."
+        />
+      </div>
     </ErpLayout>
   );
 }

@@ -51,26 +51,34 @@ export async function POST(req: Request) {
 
     // Automatically update or create customer in CRM
     try {
-      await prisma.customer.upsert({
+      const existingCustomer = await prisma.customer.findFirst({
         where: { phone: customerPhone.trim() },
-        update: {
-          name: customerName.trim(),
-          totalOrders: { increment: 1 },
-          totalSpent: { increment: Number(totalAmount) || 0 },
-          lastOrderDate: new Date(),
-          city: customerCity || undefined,
-          address: customerAddress || undefined,
-        },
-        create: {
-          name: customerName.trim(),
-          phone: customerPhone.trim(),
-          city: customerCity || "القاهرة",
-          address: customerAddress || null,
-          totalOrders: 1,
-          totalSpent: Number(totalAmount) || 0,
-          lastOrderDate: new Date(),
-        },
       });
+
+      if (existingCustomer) {
+        await prisma.customer.update({
+          where: { id: existingCustomer.id },
+          data: {
+            totalOrders: { increment: 1 },
+            totalSpent: { increment: Number(totalAmount) || 0 },
+            lastOrderDate: new Date(),
+            city: customerCity || existingCustomer.city,
+            address: customerAddress || existingCustomer.address,
+          },
+        });
+      } else {
+        await prisma.customer.create({
+          data: {
+            name: customerName.trim(),
+            phone: customerPhone.trim(),
+            city: customerCity || "القاهرة",
+            address: customerAddress || null,
+            totalOrders: 1,
+            totalSpent: Number(totalAmount) || 0,
+            lastOrderDate: new Date(),
+          },
+        });
+      }
     } catch (crmErr) {
       console.error("Auto customer sync error:", crmErr);
     }

@@ -30,6 +30,9 @@ export async function GET() {
           instagramHandle: "dcsmart.cctv",
           announcementAr: "🛡️ ضمان عامين شامل استبدال فوري لكافة كاميرات المراقبة وأجهزة التسجيل + معاينة وتركيب احترافي",
           announcementEn: "🛡️ 2-Year Full Replacement Warranty on all CCTV Cameras & DVRs + Professional Installation",
+          logoUrl: "/dc_logo.jpg",
+          invoiceTermsAr: "ضمان سنتين شامل على الكاميرات وأجهزة التسجيل ضد عيوب الصناعة — الدعم الفني والصيانة مستمران",
+          adminPin: "2026",
           deliveryFee: 50.0,
           freeShippingThreshold: 5000.0,
         },
@@ -65,6 +68,9 @@ export async function PATCH(req: Request) {
     if (body.instagramHandle !== undefined) updateData.instagramHandle = body.instagramHandle.trim();
     if (body.announcementAr !== undefined) updateData.announcementAr = body.announcementAr;
     if (body.announcementEn !== undefined) updateData.announcementEn = body.announcementEn;
+    if (body.logoUrl !== undefined) updateData.logoUrl = body.logoUrl.trim();
+    if (body.invoiceTermsAr !== undefined) updateData.invoiceTermsAr = body.invoiceTermsAr;
+    if (body.adminPin !== undefined) updateData.adminPin = body.adminPin.trim();
     if (body.deliveryFee !== undefined) updateData.deliveryFee = Number(body.deliveryFee);
     if (body.freeShippingThreshold !== undefined) {
       updateData.freeShippingThreshold = Number(body.freeShippingThreshold);

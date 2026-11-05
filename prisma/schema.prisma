@@ -62,6 +62,9 @@ model StoreSettings {
   instagramHandle       String   @default("rovystore2")
   announcementAr        String   @default("✨ شحن مجاني للطلبات فوق 1500 ج.م + عينات مجانية فاخرة مع كل طلب ✨")
   announcementEn        String   @default("✨ Free shipping on orders over 1500 EGP + complimentary luxury samples with every order ✨")
+  logoUrl               String?  @default("/dc_logo.jpg")
+  invoiceTermsAr        String?  @default("ضمان سنتين على الأجهزة والكاميرات ضد عيوب الصناعة — الاستبدال خلال 14 يوماً وفق الشروط")
+  adminPin              String?  @default("2026")
   updatedAt             DateTime @updatedAt
 }
 
@@ -285,7 +288,7 @@ model Customer {
 
   name          String
 
-  phone         String    @unique
+  phone         String
 
   email         String?
 
@@ -549,4 +552,33 @@ model Quote {
   createdBy       String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+}
+
+
+model Employee {
+  id             String            @id @default(cuid())
+  name           String
+  phone          String
+  nationalId     String?
+  role           String            @default("فني تركيبات")
+  basicSalary    Float             @default(0.0)
+  commissionRate Float             @default(0.0)
+  totalEarned    Float             @default(0.0)
+  totalAdvances  Float             @default(0.0)
+  hireDate       DateTime          @default(now())
+  status         String            @default("ACTIVE")
+  notes          String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  advances       EmployeeAdvance[]
+}
+
+model EmployeeAdvance {
+  id         String    @id @default(cuid())
+  employeeId String
+  employee   Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  amount     Float
+  reason     String?
+  date       DateTime  @default(now())
+  createdAt  DateTime  @default(now())
 }

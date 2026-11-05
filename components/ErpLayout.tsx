@@ -26,6 +26,9 @@ import {
   ShieldCheck,
   FileText,
   Cctv,
+  Sun,
+  Moon,
+  Users,
 } from "lucide-react";
 
 interface ErpLayoutProps {
@@ -42,6 +45,7 @@ interface ErpLayoutProps {
     | "reports"
     | "customers"
     | "users"
+    | "employees"
     | "settings";
 }
 
@@ -53,11 +57,33 @@ export default function ErpLayout({ children, activeItem }: ErpLayoutProps) {
   const [mounted, setMounted] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   useEffect(() => {
     setMounted(true);
     setSoundOn(isSoundEnabled());
+    const saved = localStorage.getItem("dc_theme") as "dark" | "light" | null;
+    if (saved) {
+      setTheme(saved);
+      if (saved === "light") {
+        document.documentElement.classList.add("theme-light");
+      } else {
+        document.documentElement.classList.remove("theme-light");
+      }
+    }
   }, []);
+
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    localStorage.setItem("dc_theme", next);
+    if (next === "light") {
+      document.documentElement.classList.add("theme-light");
+    } else {
+      document.documentElement.classList.remove("theme-light");
+    }
+    playSound("pop");
+  };
 
   useEffect(() => {
     if (mounted && !loading && !currentUser) {
@@ -172,6 +198,13 @@ export default function ErpLayout({ children, activeItem }: ErpLayoutProps) {
       href: "/customers",
       label: "قاعدة بيانات العملاء CRM",
       icon: UserCheck,
+    },
+    {
+      id: "employees",
+      href: "/employees",
+      label: "فريق العمل وفنيين التركيب",
+      icon: Users,
+      badge: "فنيين",
     },
     {
       id: "users",
@@ -299,6 +332,34 @@ export default function ErpLayout({ children, activeItem }: ErpLayoutProps) {
 
         {/* Bottom Section: User Profile & Actions */}
         <div className="pt-4 border-t border-cyan-500/20 space-y-3">
+          {/* Theme & Sound Controls */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              title={theme === "dark" ? "تفعيل الوضع الفاتح" : "تفعيل الوضع الليلي"}
+              className={`flex-1 py-1.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition ${
+                theme === "dark"
+                  ? "bg-zinc-900 border-zinc-700 text-amber-300 hover:bg-zinc-800"
+                  : "bg-slate-100 border-slate-300 text-indigo-700 hover:bg-slate-200"
+              }`}
+            >
+              {theme === "dark" ? <Sun size={14} className="text-amber-400" /> : <Moon size={14} className="text-indigo-600" />}
+              <span>{theme === "dark" ? "الوضع الفاتح ☀️" : "الوضع الليلي 🌙"}</span>
+            </button>
+
+            <button
+              onClick={toggleSound}
+              title={soundOn ? "كتم المؤثرات الصوتية" : "تفعيل المؤثرات الصوتية"}
+              className={`p-2 rounded-xl border transition ${
+                soundOn
+                  ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-400"
+                  : "bg-zinc-800 border-zinc-700 text-zinc-500"
+              }`}
+            >
+              {soundOn ? <Volume2 size={15} /> : <VolumeX size={15} />}
+            </button>
+          </div>
+
           {/* User info card */}
           <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
@@ -388,14 +449,23 @@ export default function ErpLayout({ children, activeItem }: ErpLayoutProps) {
             </span>
           </Link>
 
-          <Link
-            href="/"
-            target="_blank"
-            className="p-2 rounded-xl bg-slate-800 text-cyan-300 hover:text-white"
-            title="زيارة المتجر"
-          >
-            <ExternalLink size={18} />
-          </Link>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={toggleTheme}
+              title={theme === "dark" ? "الوضع الفاتح" : "الوضع الليلي"}
+              className="p-2 rounded-xl bg-slate-800 text-amber-400 hover:text-white"
+            >
+              {theme === "dark" ? <Sun size={17} /> : <Moon size={17} className="text-indigo-400" />}
+            </button>
+            <Link
+              href="/"
+              target="_blank"
+              className="p-2 rounded-xl bg-slate-800 text-cyan-300 hover:text-white"
+              title="زيارة المتجر"
+            >
+              <ExternalLink size={18} />
+            </Link>
+          </div>
         </header>
 
         {/* Page Content */}

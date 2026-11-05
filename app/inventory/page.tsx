@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import ErpLayout from "@/components/ErpLayout";
 import { playSound } from "@/lib/sounds";
+import SecurityPinModal from "@/components/SecurityPinModal";
 import {
   Package,
   Plus,
@@ -11,6 +12,7 @@ import {
   AlertTriangle,
   TrendingDown,
   Trash2,
+  Edit2,
   Check,
   X,
   Truck,
@@ -18,6 +20,8 @@ import {
   DollarSign,
   Scale,
   Sparkles,
+  Layers,
+  ArrowRightLeft,
 } from "lucide-react";
 
 interface InventoryItem {
@@ -32,6 +36,28 @@ interface InventoryItem {
   createdAt: string;
 }
 
+const COMMON_UNITS = [
+  "قطعة",
+  "لفة 100 متر",
+  "لفة (305 متر)",
+  "متر",
+  "كرتونة",
+  "طقم / كيت",
+  "بكرة",
+  "باكت",
+  "حبة",
+];
+
+const DEFAULT_CATEGORIES = [
+  "كاميرات مراقبة وأجهزة تسجيل",
+  "كابلات شبكات ومحاور ومواسير",
+  "هارد ديسك وتخزين وراكات",
+  "باور سبلاي ومحولات ومهمات كهرباء",
+  "شاشات مراقبة وسويتشات PoE وأجهزة شبكات",
+  "بوابات أمنية وأجهزة إنذار وسنترالات",
+  "مستلزمات واكسسوارات تركيب (بواطات / BNC)",
+];
+
 export default function InventoryPage() {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,20 +65,29 @@ export default function InventoryPage() {
   const [selectedCategory, setSelectedCategory] = useState("الكل");
   const [suppliersList, setSuppliersList] = useState<any[]>([]);
 
-  // Add Item Modal
-  const [isAddOpen, setIsAddOpen] = useState(false);
+  // Sync products state
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<string | null>(null);
+
+  // Add / Edit Item Modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [savingItem, setSavingItem] = useState(false);
   const [name, setName] = useState("");
-  const [category, setCategory] = useState("كاميرات مراقبة");
+  const [category, setCategory] = useState("كاميرات مراقبة وأجهزة تسجيل");
   const [quantity, setQuantity] = useState("50");
   const [unit, setUnit] = useState("قطعة");
-  const [minStock, setMinStock] = useState("20");
-  const [costPerUnit, setCostPerUnit] = useState("45");
+  const [minStock, setMinStock] = useState("10");
+  const [costPerUnit, setCostPerUnit] = useState("0");
   const [supplier, setSupplier] = useState("");
 
   // Quick Adjust Modal
   const [adjustItem, setAdjustItem] = useState<InventoryItem | null>(null);
   const [adjustAmount, setAdjustAmount] = useState("10");
+
+  // Security PIN Modal
+  const [pinAction, setPinAction] = useState<(() => void) | null>(null);
+  const [isPinOpen, setIsPinOpen] = useState(false);
 
   useEffect(() => {
     fetchItems();
@@ -82,38 +117,113 @@ export default function InventoryPage() {
     }
   };
 
-  const handleAddItem = async (e: React.FormEvent) => {
+  const handleSyncFromShowroom = async () => {
+    setSyncing(true);
+    setSyncResult(null);
+    playSound("click");
+    try {
+      const res = await fetch("/api/inventory/sync-products", { method: "POST" });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        playSound("success");
+        setSyncResult(data.message);
+        fetchItems();
+      } else {
+        alert(data.error || "فشل مزامنة المنتجات");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("حدث خطأ أثناء الاتصال بالخادم");
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleOpenAdd = () => {
+    setEditingItem(null);
+    setName("");
+    setCategory("كاميرات مراقبة وأجهزة تسجيل");
+    setQuantity("50");
+    setUnit("قطعة");
+    setMinStock("10");
+    setCostPerUnit("0");
+    setSupplier("");
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (item: InventoryItem) => {
+    setPinAction(() => () => {
+      setEditingItem(item);
+      setName(item.name);
+      setCategory(item.category);
+      setQuantity(item.quantity.toString());
+      setUnit(item.unit || "قطعة");
+      setMinStock(item.minStock.toString());
+      setCostPerUnit(item.costPerUnit.toString());
+      setSupplier(item.supplier || "");
+      setIsModalOpen(true);
+    });
+    setIsPinOpen(true);
+  };
+
+  const handleSaveItem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
     setSavingItem(true);
     playSound("click");
 
     try {
-      const res = await fetch("/api/inventory", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          category,
-          quantity: Number(quantity) || 0,
-          unit,
-          minStock: Number(minStock) || 10,
-          costPerUnit: Number(costPerUnit) || 0,
-          supplier: supplier.trim() || null,
-        }),
-      });
-
-      const data = await res.json();
-      if (res.ok && data.success) {
-        playSound("success");
-        setItems((prev) => [data.item, ...prev]);
-        setIsAddOpen(false);
-        setName("");
+      if (editingItem) {
+        const res = await fetch(`/api/inventory/${editingItem.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: name.trim(),
+            category: category.trim(),
+            quantity: Number(quantity) || 0,
+            unit: unit.trim() || "قطعة",
+            minStock: Number(minStock) || 10,
+            costPerUnit: Number(costPerUnit) || 0,
+            supplier: supplier.trim() || null,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          playSound("success");
+          setItems((prev) =>
+            prev.map((i) => (i.id === editingItem.id ? data.item : i))
+          );
+          setIsModalOpen(false);
+        } else {
+          alert(data.error || "فشل تعديل الصنف");
+        }
       } else {
-        alert(data.error || "فشل إضافة الصنف");
+        const res = await fetch("/api/inventory", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: name.trim(),
+            category: category.trim(),
+            quantity: Number(quantity) || 0,
+            unit: unit.trim() || "قطعة",
+            minStock: Number(minStock) || 10,
+            costPerUnit: Number(costPerUnit) || 0,
+            supplier: supplier.trim() || null,
+          }),
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          playSound("success");
+          setItems((prev) => [data.item, ...prev]);
+          setIsModalOpen(false);
+        } else {
+          alert(data.error || "فشل إضافة الصنف");
+        }
       }
     } catch (err) {
       console.error(err);
+      alert("حدث خطأ أثناء الحفظ");
     } finally {
       setSavingItem(false);
     }
@@ -139,23 +249,29 @@ export default function InventoryPage() {
     }
   };
 
-  const handleDeleteItem = async (id: string) => {
-    if (!confirm("هل أنت متأكد من حذف هذا الصنف من المخزن؟")) return;
-    playSound("trash");
-    try {
-      const res = await fetch(`/api/inventory/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        playSound("success");
-        setItems((prev) => prev.filter((i) => i.id !== id));
+  const handleDeleteItem = (id: string, itemName: string) => {
+    setPinAction(() => async () => {
+      if (!confirm(`هل أنت متأكد من حذف الصنف (${itemName}) نهائياً من المخزون؟`)) return;
+      playSound("trash");
+      try {
+        const res = await fetch(`/api/inventory/${id}`, { method: "DELETE" });
+        if (res.ok) {
+          playSound("success");
+          setItems((prev) => prev.filter((i) => i.id !== id));
+        }
+      } catch (err) {
+        console.error(err);
       }
-    } catch (err) {
-      console.error(err);
-    }
+    });
+    setIsPinOpen(true);
   };
 
   // Calculations
   const lowStockCount = items.filter((i) => i.quantity <= i.minStock).length;
   const totalValue = items.reduce((sum, i) => sum + i.quantity * i.costPerUnit, 0);
+
+  // Available unique categories
+  const categoriesInStock = Array.from(new Set(items.map((i) => i.category))).filter(Boolean);
 
   // Filter items
   const filteredItems = items.filter((item) => {
@@ -169,27 +285,17 @@ export default function InventoryPage() {
     return true;
   });
 
-  const categoriesList = [
-    "الكل",
-    "كاميرات مراقبة",
-    "أجهزة تسجيل XVR و NVR",
-    "كابلات شبكات ومحاور",
-    "هارد ديسك وتخزين",
-    "باور سبلاي ومحولات",
-    "راكات ومستلزمات تجميع",
-  ];
-
   return (
     <ErpLayout activeItem="inventory">
-      <div className="space-y-6">
-        {/* Header Bar */}
+      <div className="space-y-6 max-w-7xl mx-auto">
+        {/* Top Header Card */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-zinc-900/80 border border-cyan-500/20 p-5 rounded-2xl shadow-xl">
           <div className="flex items-center gap-3">
             <span className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
               <Package size={22} />
             </span>
             <div>
-              <h1 className="text-xl font-black font-serif text-cyan-400 font-bold">
+              <h1 className="text-xl font-bold font-serif text-cyan-400">
                 المخزون وحركة الأصناف وتجهيزات الأنظمة الأمنية
               </h1>
               <p className="text-xs text-zinc-400 mt-0.5">
@@ -198,118 +304,127 @@ export default function InventoryPage() {
             </div>
           </div>
 
-          <button
-            onClick={() => {
-              playSound("click");
-              setIsAddOpen(true);
-            }}
-            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 text-black font-bold text-xs shadow-lg shadow-amber-500/20 flex items-center gap-2 transition"
-          >
-            <Plus size={16} />
-            <span>إضافة صنف مخزني جديد</span>
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={handleSyncFromShowroom}
+              disabled={syncing}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:brightness-110 text-white font-bold text-xs shadow-lg shadow-cyan-500/20 flex items-center gap-2 transition disabled:opacity-50"
+            >
+              <ArrowRightLeft size={15} className={syncing ? "animate-spin" : ""} />
+              <span>{syncing ? "جاري المزامنة..." : "مزامنة منتجات المعرض إلى المخزون (158 صنف)"}</span>
+            </button>
+
+            <button
+              onClick={handleOpenAdd}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 text-black font-bold text-xs shadow-lg shadow-amber-500/20 flex items-center gap-2 transition"
+            >
+              <Plus size={16} />
+              <span>إضافة صنف مخزني جديد</span>
+            </button>
+          </div>
         </div>
 
-        {/* Metrics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-[#0e0b16] border border-cyan-500/20 p-4 rounded-2xl flex items-center justify-between">
-            <div>
-              <span className="text-[11px] text-zinc-400">إجمالي الأصناف بالمخزن</span>
-              <div className="font-serif font-black text-2xl text-zinc-100 mt-1">
-                {items.length} صنف
-              </div>
+        {/* Sync Success Banner */}
+        {syncResult && (
+          <div className="p-4 rounded-xl bg-cyan-950/60 border border-cyan-500/40 text-cyan-300 text-xs flex items-center justify-between animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <Check size={16} className="text-cyan-400" />
+              <span>{syncResult}</span>
             </div>
-            <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400">
-              <Package size={24} />
+            <button onClick={() => setSyncResult(null)} className="text-zinc-400 hover:text-white">
+              <X size={15} />
+            </button>
+          </div>
+        )}
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-[#0c0914] border border-cyan-500/20 rounded-2xl p-4 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] text-zinc-400 font-medium">إجمالي الأصناف بالمخزن</span>
+              <h3 className="text-2xl font-black font-mono text-zinc-100 mt-1">
+                {items.length} <span className="text-xs font-normal text-zinc-400 font-sans">صنف</span>
+              </h3>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+              <Package size={20} />
             </div>
           </div>
 
-          <div className="bg-[#0e0b16] border border-cyan-500/20 p-4 rounded-2xl flex items-center justify-between">
+          <div className="bg-[#0c0914] border border-emerald-500/20 rounded-2xl p-4 flex items-center justify-between">
             <div>
-              <span className="text-[11px] text-zinc-400">أصناف قاربت على النفاد</span>
-              <div
-                className={`font-serif font-black text-2xl mt-1 ${
-                  lowStockCount > 0 ? "text-red-400" : "text-emerald-400"
-                }`}
-              >
-                {lowStockCount} أصناف
-              </div>
+              <span className="text-[11px] text-zinc-400 font-medium">أصناف قاربت على النفاد</span>
+              <h3 className="text-2xl font-black font-mono text-emerald-400 mt-1">
+                {lowStockCount} <span className="text-xs font-normal text-zinc-400 font-sans">أصناف</span>
+              </h3>
             </div>
-            <div
-              className={`p-3 rounded-xl ${
-                lowStockCount > 0
-                  ? "bg-red-500/10 text-red-400 animate-pulse"
-                  : "bg-emerald-500/10 text-emerald-400"
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+              <AlertTriangle size={20} />
+            </div>
+          </div>
+
+          <div className="bg-[#0c0914] border border-blue-500/20 rounded-2xl p-4 flex items-center justify-between">
+            <div>
+              <span className="text-[11px] text-zinc-400 font-medium">القيمة التقديرية للمخزون</span>
+              <h3 className="text-2xl font-black font-mono text-cyan-300 mt-1">
+                {totalValue.toLocaleString()} <span className="text-xs font-normal text-zinc-400 font-sans">ج.م</span>
+              </h3>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400">
+              <DollarSign size={20} />
+            </div>
+          </div>
+        </div>
+
+        {/* Categories Pills & Search */}
+        <div className="space-y-3">
+          <div className="relative w-full">
+            <Search size={15} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="البحث باسم الصنف، الموديل، أو المورد..."
+              className="w-full pl-3 pr-9 py-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-cyan-500"
+            />
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none text-xs">
+            <button
+              onClick={() => setSelectedCategory("الكل")}
+              className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition ${
+                selectedCategory === "الكل"
+                  ? "bg-cyan-500 text-black shadow-md shadow-cyan-500/20"
+                  : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white"
               }`}
             >
-              <AlertTriangle size={24} />
-            </div>
-          </div>
-
-          <div className="bg-[#0e0b16] border border-cyan-500/20 p-4 rounded-2xl flex items-center justify-between">
-            <div>
-              <span className="text-[11px] text-zinc-400">القيمة التقديرية للمخزون</span>
-              <div className="font-serif font-black text-2xl text-cyan-400 font-bold mt-1">
-                {totalValue.toLocaleString()} ج.م
-              </div>
-            </div>
-            <div className="p-3 rounded-xl bg-cyan-500/10 text-cyan-400">
-              <DollarSign size={24} />
-            </div>
-          </div>
-        </div>
-
-        {/* Search & Responsive Category Filter Bar */}
-        <div className="space-y-3">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-            <div className="relative flex-1 max-w-md">
-              <Search size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-zinc-500" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="البحث باسم الصنف، الموديل، أو المورد..."
-                className="w-full pr-10 pl-4 py-2.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-cyan-500 shadow-inner"
-              />
-            </div>
-            <div className="text-xs text-zinc-400 font-medium self-end sm:self-center">
-              عرض <strong className="text-cyan-400 font-mono">{filteredItems.length}</strong> من أصل <strong className="text-zinc-200 font-mono">{items.length}</strong> صنف
-            </div>
-          </div>
-
-          {/* Full-width scrollable category pills - Never Cut Off */}
-          <div className="w-full overflow-x-auto pb-2 pt-1 scrollbar-thin">
-            <div className="flex items-center gap-2 min-w-max">
-              {categoriesList.map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => {
-                    playSound("click");
-                    setSelectedCategory(cat);
-                  }}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition shrink-0 ${
-                    selectedCategory === cat
-                      ? "bg-cyan-500 text-slate-950 font-black shadow-lg shadow-cyan-500/25"
-                      : "bg-zinc-900/90 text-zinc-400 hover:text-white hover:bg-zinc-800 border border-zinc-800"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
+              الكل ({items.length})
+            </button>
+            {categoriesInStock.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition ${
+                  selectedCategory === cat
+                    ? "bg-cyan-500 text-black shadow-md shadow-cyan-500/20"
+                    : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Inventory Items Table */}
+        {/* Inventory Items List */}
         {loading ? (
-          <div className="py-20 text-center text-cyan-400">
-            <RefreshCw size={28} className="animate-spin mx-auto mb-2" />
-            <span className="text-xs">جاري تحميل سجلات المخزون...</span>
+          <div className="p-12 text-center text-zinc-500 text-xs flex items-center justify-center gap-2">
+            <RefreshCw size={16} className="animate-spin text-cyan-400" />
+            <span>جاري استرجاع أصناف المخزون...</span>
           </div>
         ) : filteredItems.length === 0 ? (
-          <div className="py-20 text-center text-zinc-500 text-xs bg-zinc-900/30 rounded-2xl border border-zinc-800">
-            لا توجد أصناف مخزنية مطابقة
+          <div className="p-12 text-center text-zinc-500 text-xs bg-zinc-900/40 border border-zinc-800 rounded-2xl">
+            لا توجد أصناف مخزنية مطابقة. يمكنك الضغط على زر "مزامنة منتجات المعرض" لجلب كافة الأصناف فوراً!
           </div>
         ) : (
           <div className="bg-[#0c0914] border border-cyan-500/20 rounded-2xl overflow-hidden shadow-xl">
@@ -317,104 +432,102 @@ export default function InventoryPage() {
               <table className="w-full text-right text-xs">
                 <thead className="bg-zinc-900/90 text-zinc-400 border-b border-zinc-800 text-[11px] font-bold">
                   <tr>
-                    <th className="py-3 px-4">الصنف المخزني</th>
+                    <th className="py-3 px-4">اسم الصنف / الموديل</th>
                     <th className="py-3 px-4">التصنيف</th>
                     <th className="py-3 px-4">الرصيد المتاح</th>
-                    <th className="py-3 px-4">حد التنبيه</th>
-                    <th className="py-3 px-4">تكلفة الوحدة</th>
+                    <th className="py-3 px-4">وحدة القياس</th>
+                    <th className="py-3 px-4">سعر التكلفة (ج.م)</th>
                     <th className="py-3 px-4">إجمالي القيمة</th>
-                    <th className="py-3 px-4">المورد المعتمد</th>
+                    <th className="py-3 px-4">المورد / الموزع</th>
                     <th className="py-3 px-4 text-center">تعديل سريع</th>
-                    <th className="py-3 px-4 text-center">إجراءات</th>
+                    <th className="py-3 px-4 text-center">إجراءات 🔒</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-800/60">
                   {filteredItems.map((item) => {
                     const isLow = item.quantity <= item.minStock;
+                    const itemVal = item.quantity * item.costPerUnit;
+
                     return (
                       <tr
                         key={item.id}
                         className={`hover:bg-zinc-900/40 transition-colors ${
-                          isLow ? "bg-red-950/15" : ""
+                          isLow ? "bg-amber-500/5" : ""
                         }`}
                       >
                         <td className="py-3 px-4 font-bold text-zinc-200">
-                          <div>{item.name}</div>
-                          {isLow && (
-                            <span className="inline-flex items-center gap-1 text-[9.5px] text-red-400 font-bold mt-0.5">
-                              <AlertTriangle size={10} />
-                              <span>المخزون قارب على النفاد!</span>
-                            </span>
-                          )}
+                          <div className="flex items-center gap-2">
+                            {isLow && (
+                              <span title="قارب على النفاد" className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                            )}
+                            <span>{item.name}</span>
+                          </div>
                         </td>
 
-                        <td className="py-3 px-4">
-                          <span className="text-[10.5px] px-2 py-0.5 rounded-md bg-zinc-800 text-zinc-300 border border-zinc-700">
+                        <td className="py-3 px-4 text-zinc-400">
+                          <span className="px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 text-[10px]">
                             {item.category}
                           </span>
                         </td>
 
-                        <td className="py-3 px-4">
-                          <span
-                            className={`font-mono font-black text-sm ${
-                              isLow ? "text-red-400" : "text-cyan-400"
-                            }`}
-                          >
-                            {item.quantity} {item.unit}
+                        <td className="py-3 px-4 font-mono font-bold">
+                          <span className={isLow ? "text-amber-400" : "text-emerald-400"}>
+                            {item.quantity}
                           </span>
                         </td>
 
-                        <td className="py-3 px-4 font-mono text-zinc-500">
-                          {item.minStock} {item.unit}
+                        <td className="py-3 px-4 text-zinc-400 font-medium">
+                          {item.unit}
                         </td>
 
                         <td className="py-3 px-4 font-mono text-zinc-300">
-                          {item.costPerUnit} ج.م
+                          {item.costPerUnit.toLocaleString()} ج.م
                         </td>
 
-                        <td className="py-3 px-4 font-mono font-bold text-pink-300">
-                          {(item.quantity * item.costPerUnit).toLocaleString()} ج.م
+                        <td className="py-3 px-4 font-mono font-bold text-cyan-300">
+                          {itemVal.toLocaleString()} ج.م
                         </td>
 
-                        <td className="py-3 px-4 text-zinc-400 text-[11px]">
+                        <td className="py-3 px-4 text-zinc-400">
                           {item.supplier || "—"}
                         </td>
 
-                        {/* Quick stock adjustments (+10, -5) */}
                         <td className="py-3 px-4 text-center">
-                          <div className="flex items-center justify-center gap-1">
+                          <div className="inline-flex items-center gap-1">
                             <button
-                              onClick={() => handleQuickAdjust(item.id, -5)}
-                              className="px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-[10px] font-bold"
-                              title="خصم 5 وحدات"
+                              onClick={() => handleQuickAdjust(item.id, -1)}
+                              title="خصم 1"
+                              className="w-6 h-6 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-mono font-bold flex items-center justify-center"
                             >
-                              -5
+                              -
                             </button>
                             <button
-                              onClick={() => handleQuickAdjust(item.id, 10)}
-                              className="px-2 py-1 rounded bg-pink-500/20 hover:bg-pink-500/30 text-cyan-400 text-[10px] font-bold border border-cyan-500/30"
-                              title="إضافة 10 وحدات"
+                              onClick={() => handleQuickAdjust(item.id, 1)}
+                              title="إضافة 1"
+                              className="w-6 h-6 rounded bg-zinc-800 hover:bg-zinc-700 text-cyan-300 font-mono font-bold flex items-center justify-center"
                             >
-                              +10
-                            </button>
-                            <button
-                              onClick={() => handleQuickAdjust(item.id, 50)}
-                              className="px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[10px] font-bold"
-                              title="إضافة 50 وحدة (توريد)"
-                            >
-                              +50
+                              +
                             </button>
                           </div>
                         </td>
 
                         <td className="py-3 px-4 text-center">
-                          <button
-                            onClick={() => handleDeleteItem(item.id)}
-                            className="p-1.5 rounded-lg bg-zinc-800 hover:bg-red-900/50 text-red-400 transition"
-                            title="حذف الصنف"
-                          >
-                            <Trash2 size={13} />
-                          </button>
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => handleOpenEdit(item)}
+                              title="تعديل الصنف كاملاً (محمي بالباسورد)"
+                              className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 transition"
+                            >
+                              <Edit2 size={13} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteItem(item.id, item.name)}
+                              title="حذف الصنف (محمي بالباسورد)"
+                              className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -424,143 +537,159 @@ export default function InventoryPage() {
             </div>
           </div>
         )}
-      </div>
 
-      {/* Add Item Modal */}
-      {isAddOpen && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-[#120e1c] border border-cyan-500/30 rounded-2xl p-6 shadow-2xl relative text-xs">
-            <div className="flex items-center justify-between pb-3 border-b border-zinc-800 mb-4">
-              <h3 className="text-base font-bold text-pink-300 font-serif flex items-center gap-2">
-                <Package size={18} />
-                <span>إضافة صنف جديد للمخزون</span>
-              </h3>
+        {/* Add / Edit Item Modal */}
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-[#0f1422] border border-cyan-500/30 rounded-2xl w-full max-w-lg p-6 shadow-2xl relative animate-fadeIn text-right text-slate-100">
               <button
-                onClick={() => setIsAddOpen(false)}
-                className="p-1 rounded-lg bg-zinc-800 text-zinc-400 hover:text-white"
+                onClick={() => setIsModalOpen(false)}
+                className="absolute left-4 top-4 text-zinc-400 hover:text-white p-1 rounded-lg"
               >
-                <X size={16} />
+                <X size={18} />
               </button>
+
+              <h3 className="font-bold text-base text-cyan-400 mb-4 flex items-center gap-2">
+                <Package size={18} />
+                <span>{editingItem ? "تعديل الصنف المخزني" : "إضافة صنف أو خامة جديدة للمخزن"}</span>
+              </h3>
+
+              <form onSubmit={handleSaveItem} className="space-y-3.5 text-xs">
+                <div>
+                  <label className="block text-zinc-300 font-medium mb-1">اسم الصنف أو كود الموديل *:</label>
+                  <input
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="مثال: لفة سلك rg 174 100y blue star / كاميرا داهوا 2 ميجا"
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-cyan-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-zinc-300 font-medium mb-1">التصنيف (اختر أو اكتب جديد):</label>
+                    <input
+                      type="text"
+                      list="category-suggestions"
+                      required
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      placeholder="اكتب تصنيف جديد أو اختر..."
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-cyan-500"
+                    />
+                    <datalist id="category-suggestions">
+                      {DEFAULT_CATEGORIES.map((c) => (
+                        <option key={c} value={c} />
+                      ))}
+                      {categoriesInStock.map((c) => (
+                        <option key={c} value={c} />
+                      ))}
+                    </datalist>
+                  </div>
+
+                  <div>
+                    <label className="block text-zinc-300 font-medium mb-1">وحدة القياس (اكتب أو اختر):</label>
+                    <input
+                      type="text"
+                      list="unit-suggestions"
+                      required
+                      value={unit}
+                      onChange={(e) => setUnit(e.target.value)}
+                      placeholder="مثال: لفة 100 متر / قطعة..."
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-cyan-500"
+                    />
+                    <datalist id="unit-suggestions">
+                      {COMMON_UNITS.map((u) => (
+                        <option key={u} value={u} />
+                      ))}
+                    </datalist>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-zinc-300 font-medium mb-1">الرصيد الفعلي:</label>
+                    <input
+                      type="number"
+                      required
+                      value={quantity}
+                      onChange={(e) => setQuantity(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-zinc-300 font-medium mb-1">حد التنبيه (النواقص):</label>
+                    <input
+                      type="number"
+                      value={minStock}
+                      onChange={(e) => setMinStock(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-zinc-300 font-medium mb-1">تكلفة الشراء (ج.م):</label>
+                    <input
+                      type="number"
+                      value={costPerUnit}
+                      onChange={(e) => setCostPerUnit(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-zinc-300 font-medium mb-1">المورد أو جهة التوريد:</label>
+                  <input
+                    type="text"
+                    list="suppliers-suggestions"
+                    value={supplier}
+                    onChange={(e) => setSupplier(e.target.value)}
+                    placeholder="اختر أو اكتب اسم المورد..."
+                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-cyan-500"
+                  />
+                  <datalist id="suppliers-suggestions">
+                    {suppliersList.map((s) => (
+                      <option key={s.id} value={s.name}>
+                        {s.name} ({s.company || s.category})
+                      </option>
+                    ))}
+                  </datalist>
+                </div>
+
+                <div className="flex gap-2 pt-3 border-t border-zinc-800">
+                  <button
+                    type="submit"
+                    disabled={savingItem}
+                    className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-black font-bold text-xs"
+                  >
+                    {savingItem ? "جاري الحفظ..." : editingItem ? "حفظ التعديلات" : "إضافة الصنف للمخزن"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="px-4 py-2.5 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white"
+                  >
+                    إلغاء
+                  </button>
+                </div>
+              </form>
             </div>
-
-            <form onSubmit={handleAddItem} className="space-y-3">
-              <div>
-                <label className="block text-zinc-300 font-medium mb-1">اسم الصنف أو المادة الخام:</label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="مثال: كاميرا داهوا خارجي 2 ميجا / هارد 1 تيرا سيجيت / لفة سلك 305 متر"
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-cyan-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-zinc-300 font-medium mb-1">التصنيف:</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
-                  >
-                    <option value="كاميرات مراقبة">كاميرات مراقبة (داهوا / هيكفيجن / يوني آرك)</option>
-                    <option value="أجهزة تسجيل XVR و NVR">أجهزة تسجيل XVR و NVR</option>
-                    <option value="كابلات شبكات ومحاور">كابلات شبكات ومحاور ووصلات BNC</option>
-                    <option value="هارد ديسك وتخزين">هارد ديسك وتخزين وراكات تجميع RACK</option>
-                    <option value="باور سبلاي ومحولات">باور سبلاي ومحولات ومستلزمات كهرباء</option>
-                    <option value="راكات ومستلزمات تجميع">راكات ومستلزمات تجميع وشاشات</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-zinc-300 font-medium mb-1">وحدة القياس:</label>
-                  <select
-                    value={unit}
-                    onChange={(e) => setUnit(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200"
-                  >
-                    <option value="قطعة">قطعة</option>
-                    <option value="جرام">جرام</option>
-                    <option value="تولة">تولة</option>
-                    <option value="لتر">لتر</option>
-                    <option value="بوكس">بوكس</option>
-                    <option value="كرتونة">كرتونة</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-zinc-300 font-medium mb-1">الكمية الحالية:</label>
-                  <input
-                    type="number"
-                    value={quantity}
-                    onChange={(e) => setQuantity(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-zinc-300 font-medium mb-1">حد التنبيه:</label>
-                  <input
-                    type="number"
-                    value={minStock}
-                    onChange={(e) => setMinStock(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-zinc-300 font-medium mb-1">سعر التكلفة (ج.م):</label>
-                  <input
-                    type="number"
-                    value={costPerUnit}
-                    onChange={(e) => setCostPerUnit(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-zinc-300 font-medium">المورد أو جهة التوريد:</label>
-                  <span className="text-[10px] text-cyan-400 font-bold">اختر من المسجلين أو اكتب اسماً جديداً</span>
-                </div>
-                <input
-                  type="text"
-                  list="registered-suppliers-list"
-                  value={supplier}
-                  onChange={(e) => setSupplier(e.target.value)}
-                  placeholder="مثال: الشركة الهندسية لتوزيع أنظمة داهوا / هيكفيجن"
-                  className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-zinc-700 text-zinc-200 focus:outline-none focus:border-cyan-500"
-                />
-                <datalist id="registered-suppliers-list">
-                  {suppliersList.map((s) => (
-                    <option key={s.id} value={s.name}>
-                      {s.name} ({s.company ? `${s.company} • ` : ""}{s.category})
-                    </option>
-                  ))}
-                </datalist>
-              </div>
-
-              <div className="flex gap-3 pt-3 border-t border-zinc-800">
-                <button
-                  type="submit"
-                  disabled={savingItem}
-                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:brightness-110 text-black font-bold text-xs"
-                >
-                  {savingItem ? "جاري الإضافة..." : "حفظ في المخزن 📦"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsAddOpen(false)}
-                  className="px-4 py-2.5 rounded-xl bg-zinc-800 text-zinc-400 hover:text-white"
-                >
-                  إلغاء
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Master Security PIN Modal */}
+        <SecurityPinModal
+          isOpen={isPinOpen}
+          onClose={() => setIsPinOpen(false)}
+          onSuccess={() => {
+            if (pinAction) pinAction();
+          }}
+          title="تأكيد بصلاحية الإدارة (Master PIN)"
+          actionDescription="تعديل أو حذف أصناف المخزون يتطلب إدخال رمز أمان الإدارة."
+        />
+      </div>
     </ErpLayout>
   );
 }

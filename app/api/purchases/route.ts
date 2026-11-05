@@ -133,3 +133,89 @@ export async function POST(req: Request) {
     );
   }
 }
+
+export async function PUT(req: Request) {
+  try {
+    const body = await req.json();
+    const { id, items, totalAmount, paidAmount, paymentMethod, notes } = body;
+
+    if (!id || !items || !totalAmount) {
+      return NextResponse.json({ error: "بيانات الفاتورة غير مكتملة للتعديل" }, { status: 400 });
+    }
+
+    const oldInvoice = await prisma.purchaseInvoice.findUnique({
+      where: { id },
+    });
+
+    if (!oldInvoice) {
+      return NextResponse.json({ error: "الفاتورة غير موجودة" }, { status: 404 });
+    }
+
+    const total = Number(totalAmount);
+    const paid = Number(paidAmount) || 0;
+    const remaining = Math.max(0, total - paid);
+
+    // Balance difference
+    const diffPurchases = total - oldInvoice.totalAmount;
+    const diffPaid = paid - oldInvoice.paidAmount;
+    const diffRemaining = remaining - oldInvoice.remainingAmount;
+
+    const invoice = await prisma.purchaseInvoice.update({
+      where: { id },
+      data: {
+        items: typeof items === "string" ? items : JSON.stringify(items),
+        totalAmount: total,
+        paidAmount: paid,
+        remainingAmount: remaining,
+        paymentMethod: paymentMethod || oldInvoice.paymentMethod,
+        notes: notes !== undefined ? notes : oldInvoice.notes,
+      },
+    });
+
+    // Update supplier balance
+    await prisma.supplier.update({
+      where: { id: oldInvoice.supplierId },
+      data: {
+        totalPurchases: { increment: diffPurchases },
+        totalPaid: { increment: diffPaid },
+        currentBalance: { increment: diffRemaining },
+      },
+    });
+
+    return NextResponse.json({ success: true, invoice });
+  } catch (error: any) {
+    return NextResponse.json({ error: "فشل تعديل الفاتورة", details: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "معرف الفاتورة مطلوب للحذف" }, { status: 400 });
+    }
+
+    const invoice = await prisma.purchaseInvoice.findUnique({ where: { id } });
+    if (!invoice) {
+      return NextResponse.json({ error: "الفاتورة غير موجودة" }, { status: 404 });
+    }
+
+    // Adjust supplier balance back
+    await prisma.supplier.update({
+      where: { id: invoice.supplierId },
+      data: {
+        totalPurchases: { decrement: invoice.totalAmount },
+        totalPaid: { decrement: invoice.paidAmount },
+        currentBalance: { decrement: invoice.remainingAmount },
+      },
+    });
+
+    await prisma.purchaseInvoice.delete({ where: { id } });
+
+    return NextResponse.json({ success: true, message: "تم حذف الفاتورة وتعديل رصيد المورد" });
+  } catch (error: any) {
+    return NextResponse.json({ error: "فشل حذف الفاتورة", details: error.message }, { status: 500 });
+  }
+}

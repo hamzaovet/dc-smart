@@ -70,7 +70,117 @@ body {
   background: #06b6d4;
 }
 
-/* Print Styles for Official Quotes and Receipts */
+/* ==========================================================
+   ☀️ HIGH-CONTRAST LIGHT MODE ENGINE (الوضع الفاتح فائق التباين)
+   ========================================================== */
+.theme-light,
+.theme-light body {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+.theme-light ::-webkit-scrollbar-track {
+  background: #f1f5f9 !important;
+}
+
+.theme-light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+}
+
+/* Background surfaces & cards */
+.theme-light div[class*="bg-[#080c14]"],
+.theme-light div[class*="bg-[#0c0914]"],
+.theme-light div[class*="bg-[#0f1422]"],
+.theme-light div[class*="bg-zinc-950"],
+.theme-light div[class*="bg-zinc-900"],
+.theme-light div[class*="bg-zinc-900/80"],
+.theme-light div[class*="bg-zinc-900/90"],
+.theme-light div[class*="bg-zinc-900/70"],
+.theme-light div[class*="bg-zinc-900/60"],
+.theme-light div[class*="bg-zinc-900/50"],
+.theme-light div[class*="bg-zinc-900/40"],
+.theme-light div[class*="bg-slate-900"],
+.theme-light div[class*="bg-slate-950"],
+.theme-light aside {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+/* Header & Sidebar */
+.theme-light header,
+.theme-light aside {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Tables in Light Mode */
+.theme-light table thead {
+  background-color: #e2e8f0 !important;
+}
+
+.theme-light table thead th {
+  color: #1e293b !important;
+  border-color: #cbd5e1 !important;
+}
+
+.theme-light table tbody tr {
+  border-color: #e2e8f0 !important;
+}
+
+.theme-light table tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+/* Typography Overrides (Preventing white-on-white text) */
+.theme-light span[class*="text-zinc-100"],
+.theme-light span[class*="text-zinc-200"],
+.theme-light span[class*="text-zinc-300"],
+.theme-light span[class*="text-slate-100"],
+.theme-light span[class*="text-slate-200"],
+.theme-light h1,
+.theme-light h2,
+.theme-light h3,
+.theme-light h4,
+.theme-light p[class*="text-zinc-100"],
+.theme-light p[class*="text-zinc-200"],
+.theme-light td[class*="text-zinc-100"],
+.theme-light td[class*="text-zinc-200"],
+.theme-light td[class*="text-zinc-300"] {
+  color: #0f172a !important;
+}
+
+.theme-light span[class*="text-zinc-400"],
+.theme-light span[class*="text-zinc-500"],
+.theme-light p[class*="text-zinc-400"],
+.theme-light p[class*="text-zinc-500"],
+.theme-light td[class*="text-zinc-400"],
+.theme-light td[class*="text-zinc-500"] {
+  color: #475569 !important;
+}
+
+/* Inputs, Selects, and Textareas */
+.theme-light input,
+.theme-light select,
+.theme-light textarea {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+.theme-light input::placeholder,
+.theme-light textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Modals Backdrops */
+.theme-light .fixed.inset-0.z-50 > div {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+/* Print Styles */
 @media print {
   body {
     background-color: #ffffff !important;

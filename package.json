@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev --webpack --port 3095",
     "build": "next build --webpack",
+    "postinstall": "prisma generate",
     "start": "next start --port 3095",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
